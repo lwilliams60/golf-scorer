@@ -74,7 +74,10 @@ export interface UkClub {
 export async function searchUk(q: string): Promise<UkClub[]> {
   const r = await fetch(`/api/courses?q=${encodeURIComponent(q)}`)
   const j = await r.json().catch(() => ({}))
-  if (!r.ok) throw new Error(j.error ?? 'Course search is not available')
+  if (!r.ok) {
+    if (String(j.error ?? '').includes('429')) throw new Error('Course search is busy. Wait a minute, then type again.')
+    throw new Error(j.error ?? 'Course search is not available')
+  }
   return j.clubs ?? []
 }
 
