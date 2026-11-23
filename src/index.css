@@ -216,3 +216,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .winner { font-weight: 700; margin: 0 0 8px; }
 .warn { color: #FBBF24; }
 .top .title > .muted { display: block; }
+.keystats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.keystats .hero { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.keystats .hero .v { font-size: 30px; }
+.statsec .standings { margin-top: 6px; }

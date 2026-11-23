@@ -5,8 +5,7 @@ import { backend } from '../store/backend'
 import { loadMyRounds, type MyRound } from '../store/history'
 import { focusAreas, summarise } from '../engine/stats'
 import { mantraFor } from '../data/mantras'
-import { FocusList, SgBars, Tiles, money, shortDate } from './Insights'
-import { ShareWithCoach } from './CoachShare'
+import { FocusList, KeyStats, money, shortDate } from './Insights'
 
 const SNAPSHOT = 6
 
@@ -24,8 +23,6 @@ export function HomeScreen({ profile }: { profile: Profile }) {
   const last = useMemo(() => (mine ?? []).slice(0, SNAPSHOT), [mine])
   const summary = useMemo(() => summarise(last.map((m) => m.facts)), [last])
   const focus = useMemo(() => focusAreas(summary), [summary])
-  const full = last.filter((m) => m.facts.holesPlayed === 18)
-  const stableford = full.length ? full.reduce((s, m) => s + m.points, 0) / full.length : null
   const initials = profile.name
     .split(/\s+/)
     .map((w) => w[0])
@@ -78,17 +75,15 @@ export function HomeScreen({ profile }: { profile: Profile }) {
                   Last {last.length} round{last.length > 1 ? 's' : ''}
                 </span>
               </div>
-              <Tiles s={summary} stableford={stableford} />
+              <KeyStats s={summary} />
+              <button className="secondary block" style={{ marginTop: 0 }} onClick={() => go('stats')}>
+                View more stats ›
+              </button>
             </section>
-            <SgBars s={summary} />
             <FocusList focus={focus} />
-            <ShareWithCoach profile={profile} mine={mine!} />
             <section className="stack" style={{ gap: 10 }}>
               <div className="sechead">
                 <h2>Recent rounds</h2>
-                <button className="link small" style={{ color: 'var(--accent)' }} onClick={() => go('stats')}>
-                  All stats ›
-                </button>
               </div>
               {mine!.slice(0, 5).map((m) => (
                 <button className="rrow" key={m.round.code} onClick={() => go(`round/${m.round.code}`)}>

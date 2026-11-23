@@ -1,4 +1,4 @@
-import type { Focus, Summary } from '../engine/stats'
+import type { Focus, RoundFacts, Summary } from '../engine/stats'
 import { PUTT_BANDS } from '../engine/stats'
 
 const pct = (x: number | null) => (x == null ? '–' : `${Math.round(x * 100)}%`)
@@ -118,4 +118,139 @@ export function money(v: number) {
 export function shortDate(iso: string) {
   const d = new Date(iso + 'T12:00:00')
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+/** The five headline numbers for the home screen. */
+export function KeyStats({ s }: { s: Summary }) {
+  const tiles: [string, string, string][] = [
+    ['Fairways', pct(s.fairways), 'hit off the tee'],
+    ['Greens in reg', pct(s.gir), s.gir != null ? `${Math.round(s.gir * 18)} a round` : ''],
+    ['Scrambling', pct(s.scrambling), 'up and downs'],
+    ['Putts', num(s.puttsPerRound), 'per round'],
+  ]
+  return (
+    <div className="keystats">
+      <div className="t3 hero">
+        <span className="l">Scoring average</span>
+        <span className="v">{num(s.scoringAvg)}</span>
+        <span className="s">{s.fullRounds ? `${s.fullRounds} full round${s.fullRounds > 1 ? 's' : ''}` : 'no full rounds yet'}</span>
+      </div>
+      {tiles.map(([l, v, sub]) => (
+        <div className="t3" key={l}>
+          <span className="l">{l}</span>
+          <span className="v">{v}</span>
+          <span className="s">{sub}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+type Row = [label: string, value: string, note?: string, tone?: 'good' | 'bad' | '']
+
+function Section({ title, sg, rows, children }: { title: string; sg?: number | null; rows: Row[]; children?: React.ReactNode }) {
+  return (
+    <section className="card statsec">
+      <div className="sechead">
+        <h2>{title}</h2>
+        {sg != null && (
+          <span className={`small ${sg >= 0 ? 'good' : 'bad'}`} title="Strokes gained per round against a scratch golfer">
+            {sg > 0 ? '+' : sg < 0 ? '−' : ''}
+            {Math.abs(sg).toFixed(1)} strokes gained
+          </span>
+        )}
+      </div>
+      <table className="standings">
+        <tbody>
+          {rows.map(([l, v, note, tone]) => (
+            <tr key={l}>
+              <td>
+                {l}
+                {note && <div className="muted small">{note}</div>}
+              </td>
+              <td className={`val ${tone ?? ''}`}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {children}
+    </section>
+  )
+}
+
+/** The deeper dive: one section each for scoring, tee shots, approaches, short game and putting. */
+export function StatSections({ s, rounds, stableford }: { s: Summary; rounds: RoundFacts[]; stableford: number | null }) {
+  const holes = rounds.flatMap((r) => r.holes.filter((h) => h.score != null && h.score > 0))
+  const n = holes.length
+  const perRound = (k: number) => (n ? ((k / n) * 18).toFixed(1) : '–')
+  const toPar = (h: (typeof holes)[number]) => h.score! - h.par
+  const byPar = [3, 4, 5].map((par) => {
+    const hs = holes.filter((h) => h.par === par)
+    const avg = hs.length ? hs.reduce((a, h) => a + h.score!, 0) / hs.length : null
+    return [`Par ${par}s`, avg == null ? '–' : avg.toFixed(2), avg == null ? `${hs.length} holes` : `${avg - par >= 0 ? '+' : ''}${(avg - par).toFixed(2)} a hole`] as Row
+  })
+  const best = rounds.filter((r) => r.holesPlayed === 18).sort((a, b) => a.gross - b.gross)[0]
+  const m = s.approachMiss
+  const misses = m.short + m.long + m.left + m.right + m.bunker
+  const missPct = (k: number) => (misses ? `${Math.round((k / misses) * 100)}%` : '–')
+  const share = (x: number | null) => (x == null ? '–' : `${Math.round(x * 100)}%`)
+  return (
+    <>
+      <Section
+        title="Scoring"
+        rows={[
+          ['Scoring average', num(s.scoringAvg), s.fullRounds ? `${s.fullRounds} full round${s.fullRounds > 1 ? 's' : ''}` : 'no full rounds yet'],
+          ['Stableford average', num(stableford), 'points a round'],
+          ['Best round', best ? String(best.gross) : '–', best ? `${best.course}` : ''],
+          ...byPar,
+          ['Birdies or better', perRound(holes.filter((h) => toPar(h) <= -1).length), 'per round', 'good'],
+          ['Pars', perRound(holes.filter((h) => toPar(h) === 0).length), 'per round'],
+          ['Bogeys', perRound(holes.filter((h) => toPar(h) === 1).length), 'per round'],
+          ['Double bogey or worse', perRound(holes.filter((h) => toPar(h) >= 2).length), 'per round', 'bad'],
+        ]}
+      />
+      <Section
+        title="Off the tee"
+        sg={s.sg.tee}
+        rows={[
+          ['Fairways hit', share(s.fairways), 'par 4s and 5s'],
+          ['Missed left', share(s.missLeft), 'of missed fairways'],
+          ['Missed right', share(s.missRight), 'of missed fairways'],
+          ['Penalties off the tee', num(s.teePenaltiesPerRound), 'per round', (s.teePenaltiesPerRound ?? 0) >= 1 ? 'bad' : ''],
+        ]}
+      />
+      <Section
+        title="Approach shots"
+        sg={s.sg.approach}
+        rows={[
+          ['Greens in regulation', share(s.gir), s.gir != null ? `${Math.round(s.gir * 18)} a round` : ''],
+          ['Missed short', missPct(m.short), 'of missed greens'],
+          ['Missed long', missPct(m.long), 'of missed greens'],
+          ['Missed left', missPct(m.left), 'of missed greens'],
+          ['Missed right', missPct(m.right), 'of missed greens'],
+          ['In a bunker', missPct(m.bunker), 'of missed greens'],
+        ]}
+      />
+      <Section
+        title="Short game"
+        sg={s.sg.around}
+        rows={[
+          ['Scrambling', share(s.scrambling), 'par or better after missing the green'],
+          ['Sand saves', share(s.sandSaves), 'par or better from a greenside bunker', s.sandSaves != null && s.sandSaves < 0.3 ? 'bad' : ''],
+        ]}
+      />
+      <Section
+        title="Putting"
+        sg={s.sg.putting}
+        rows={[
+          ['Putts', num(s.puttsPerRound), 'per round'],
+          ['Putts per green in reg', num(s.puttsPerGir, 2), 'when you hit the green'],
+          ['Three-putts', num(s.threePuttsPerRound), 'per round', (s.threePuttsPerRound ?? 0) >= 1.5 ? 'bad' : ''],
+          ...s.puttsByBand
+            .filter((b) => b.holes)
+            .map((b) => [`From ${PUTT_BANDS.find((x) => x.id === b.band)!.label.replace(/^Under/, 'under')}`, b.avgPutts == null ? '–' : `${b.avgPutts.toFixed(2)} putts`, `${b.holes} holes`] as Row),
+        ]}
+      />
+    </>
+  )
 }
