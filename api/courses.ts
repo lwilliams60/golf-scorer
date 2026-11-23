@@ -1,7 +1,7 @@
 // Vercel serverless function: searches the UK Golf API and turns a club into our Course format.
 // The API key stays here on the server (GOLF_API_KEY), never in the app.
 
-import { toCourse, type J } from '../src/data/ukgolf'
+import { toCourse, type J } from '../src/data/ukgolf.js'
 
 const HOST = 'uk-golf-course-data-api.p.rapidapi.com'
 const BASES = [`https://${HOST}`, 'https://uk-golf-api.vercel.app']
