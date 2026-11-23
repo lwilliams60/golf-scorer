@@ -227,6 +227,7 @@ function Scorecard({
           </div>
         )
       })}
+      {hole < 2 && <p className="muted small">Couldn't finish a hole? Tap the score again to mark P/U (picked up).</p>}
       {scorer && scorer !== me && <p className="muted small">{byId(scorer).name} is scoring for this group. You can still log your own shots below.</p>}
 
       {group.players.includes(me) && <QuickStats par={holePar(h, meP)} gross={round.scores[me]?.[hole]} stats={myStats} onChange={setStat} />}

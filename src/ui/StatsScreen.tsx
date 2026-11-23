@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { go } from '../nav'
 import type { Profile } from '../store/profile'
-import { loadMyRounds, type MyRound } from '../store/history'
+import { loadMyRounds, SNAPSHOT, type MyRound } from '../store/history'
 import { benchmarkGaps, focusAreas, summarise, type Summary } from '../engine/stats'
 import { approachTip, puttingTip, shortGameTip, statsView, teeTip, type StatsView, type Tip } from '../engine/statsView'
 import { benchmarkFor, hcpLabel, playsLike, playsLikeLabel } from '../data/benchmarks'
@@ -64,7 +64,7 @@ function Empty({ children }: { children: ReactNode }) {
 
 export function StatsScreen({ profile }: { profile: Profile }) {
   const [mine, setMine] = useState<MyRound[] | null>(null)
-  const [range, setRange] = useState<(typeof RANGES)[number]>(20)
+  const [range, setRange] = useState<(typeof RANGES)[number]>(SNAPSHOT)
   const [tab, setTab] = useState<Tab>('overview')
   useEffect(() => {
     loadMyRounds(profile).then(setMine)
@@ -147,10 +147,10 @@ function Overview({ s, v, index, list, profile, mine }: { s: Summary; v: StatsVi
   const f = v.finish
   const per = (n: number) => (f.holes ? (n / f.holes) * 18 : 0)
   const seg: [string, string, number][] = [
-    ['Birdies', 'birdie', per(f.birdies)],
-    ['Pars', 'par', per(f.pars)],
-    ['Bogeys', 'bogey', per(f.bogeys)],
-    ['Doubles+', 'double', per(f.doubles)],
+    ['Birdies', 'fin-birdie', per(f.birdies)],
+    ['Pars', 'fin-par', per(f.pars)],
+    ['Bogeys', 'fin-bogey', per(f.bogeys)],
+    ['Doubles+', 'fin-double', per(f.doubles)],
   ]
   return (
     <>

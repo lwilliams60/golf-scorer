@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { go } from '../nav'
 import { type Profile } from '../store/profile'
 import { backend } from '../store/backend'
-import { loadMyRounds, type MyRound } from '../store/history'
+import { loadMyRounds, SNAPSHOT, type MyRound } from '../store/history'
 import { focusAreas, summarise } from '../engine/stats'
 import { mantraFor } from '../data/mantras'
 import { FocusList, KeyStats, money, shortDate } from './Insights'
 
-const SNAPSHOT = 6
 
 function greeting() {
   const h = new Date().getHours()
