@@ -207,3 +207,12 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .pcard-row label span { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 .pcard input, .pcard select { background: var(--bg); }
 .pcard select { padding-left: 10px; padding-right: 4px; font-size: 15px; }
+
+.invite-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; background: var(--card-2); border: 1px solid var(--accent); border-radius: 999px; padding: 5px 12px; color: var(--accent); font-weight: 600; font-size: 0.85rem; white-space: nowrap; cursor: pointer; }
+.invite-btn .invite-code { letter-spacing: 0.08em; }
+.finish-wait { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.finish-wait p { margin: 0 0 10px; }
+.grid .sub { font-weight: 700; background: var(--card-2); }
+.winner { font-weight: 700; margin: 0 0 8px; }
+.warn { color: #FBBF24; }
+.top .title > .muted { display: block; }

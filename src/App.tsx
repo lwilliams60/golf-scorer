@@ -15,7 +15,11 @@ import { saveProfile } from './store/profile'
 function useHash() {
   const [hash, setHash] = useState(() => window.location.hash.slice(1))
   useEffect(() => {
-    const h = () => setHash(window.location.hash.slice(1))
+    const h = () => {
+      setHash(window.location.hash.slice(1))
+      // A new screen always opens at the top.
+      window.scrollTo({ top: 0 })
+    }
     window.addEventListener('hashchange', h)
     return () => window.removeEventListener('hashchange', h)
   }, [])
