@@ -54,7 +54,8 @@ function chunkGroups(n: number): number[] {
 
 export function CreateRound({ profile }: { profile: Profile }) {
   const [courses, setCourses] = useState<Course[]>(allCourses)
-  const [courseId, setCourseId] = useState(courses[0]?.id ?? '')
+  // No default course: the player chooses or searches every time.
+  const [courseId, setCourseId] = useState('')
   // null = closed, 'new' = blank card, a Course = editing that card
   const [editing, setEditing] = useState<Course | 'new' | null>(null)
   const [reviewing, setReviewing] = useState<Course | null>(null)
@@ -217,7 +218,13 @@ export function CreateRound({ profile }: { profile: Profile }) {
               </label>
               <label>
                 <span>Tees</span>
-                {course && <TeeSelect course={course} tee={r.tee} gender={r.gender} onChange={(tee, gender) => upd(r.id, { tee, gender })} />}
+                {course ? (
+                  <TeeSelect course={course} tee={r.tee} gender={r.gender} onChange={(tee, gender) => upd(r.id, { tee, gender })} />
+                ) : (
+                  <select disabled aria-label="Tees">
+                    <option>Choose a course first</option>
+                  </select>
+                )}
               </label>
               {!autoGroups && (
                 <label>
@@ -318,6 +325,7 @@ export function CreateRound({ profile }: { profile: Profile }) {
             </div>
           )
         })}
+        {!course && <p className="muted small">Choose a course at the top to create the round.</p>}
         <button className="primary block" disabled={!valid || busy} onClick={create}>
           {busy ? 'Creating…' : 'Create round'}
         </button>
