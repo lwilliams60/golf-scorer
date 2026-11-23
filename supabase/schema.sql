@@ -11,6 +11,9 @@ create table if not exists public.entries (
 
 create index if not exists entries_player_idx on public.entries (k) where k like 'p|%';
 
+-- New Supabase projects don't give the app's public key access to tables by default.
+grant select, insert, update on public.entries to anon, authenticated;
+
 alter table public.entries enable row level security;
 
 -- Version 1: anyone with the app can read and write rounds; a round is found by its 6-letter code.
