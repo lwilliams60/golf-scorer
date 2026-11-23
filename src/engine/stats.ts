@@ -122,6 +122,8 @@ export interface Summary {
   rounds: number
   fullRounds: number
   scoringAvg: number | null
+  /** Average score to par over full rounds. */
+  toParAvg: number | null
   fairways: number | null
   missLeft: number | null
   missRight: number | null
@@ -160,6 +162,7 @@ export function summarise(rounds: RoundFacts[]): Summary {
     rounds: rounds.length,
     fullRounds: full.length,
     scoringAvg: avg(full.map((r) => r.gross)),
+    toParAvg: avg(full.map((r) => r.toPar)),
     fairways: pct(tees.filter((h) => h.tee === 'fairway').length, tees.length),
     missLeft: pct(misses.filter((h) => h.tee === 'left').length, misses.length),
     missRight: pct(misses.filter((h) => h.tee === 'right').length, misses.length),

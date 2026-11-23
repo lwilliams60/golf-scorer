@@ -1,5 +1,6 @@
 import type { Focus, RoundFacts, Summary } from '../engine/stats'
 import { APPROACH_BANDS, PUTT_BANDS } from '../engine/stats'
+import { BENCHMARK_SOURCE, benchmarkFor, hcpLabel } from '../data/benchmarks'
 
 const pct = (x: number | null) => (x == null ? '–' : `${Math.round(x * 100)}%`)
 const num = (x: number | null, d = 1) => (x == null ? '–' : x.toFixed(d))
@@ -121,29 +122,41 @@ export function shortDate(iso: string) {
 }
 
 /** The five headline numbers for the home screen. */
-export function KeyStats({ s }: { s: Summary }) {
-  const tiles: [string, string, string][] = [
-    ['Fairways', pct(s.fairways), 'hit off the tee'],
-    ['Greens in reg', pct(s.gir), s.gir != null ? `${Math.round(s.gir * 18)} a round` : ''],
-    ['Scrambling', pct(s.scrambling), 'up and downs'],
-    ['Putts', num(s.puttsPerRound), 'per round'],
+export function KeyStats({ s, index }: { s: Summary; index: number }) {
+  const b = benchmarkFor(index)
+  const typical = `typical ${hcpLabel(index)}:`
+  // Higher is better for everything here except putts.
+  const tone = (mine: number | null, theirs: number, lowerIsBetter = false) =>
+    mine == null ? '' : Math.abs(mine - theirs) < (lowerIsBetter ? 0.5 : 0.03) ? '' : (lowerIsBetter ? mine < theirs : mine > theirs) ? 'good' : 'bad'
+  const tiles: [string, string, string, string][] = [
+    ['Fairways', pct(s.fairways), `${typical} ${pct(b.fairways)}`, tone(s.fairways, b.fairways)],
+    ['Greens in reg', pct(s.gir), `${typical} ${pct(b.gir)}`, tone(s.gir, b.gir)],
+    ['Scrambling', pct(s.scrambling), `${typical} ${pct(b.scrambling)}`, tone(s.scrambling, b.scrambling)],
+    ['Putts', num(s.puttsPerRound), `${typical} ${num(b.putts)}`, tone(s.puttsPerRound, b.putts, true)],
   ]
+  const signed = (x: number) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(1)}`
   return (
     <div className="keystats">
       <div className="t3 hero">
         <div className="hero-text">
           <span className="l">Scoring average</span>
           <span className="s">{s.fullRounds ? `Over ${s.fullRounds} full round${s.fullRounds > 1 ? 's' : ''}` : 'No full rounds yet'}</span>
+          {s.toParAvg != null && (
+            <span className="s">
+              <span className={tone(s.toParAvg, b.toPar, true)}>{signed(s.toParAvg)} to par</span> · {typical} {signed(b.toPar)}
+            </span>
+          )}
         </div>
         <span className="v">{num(s.scoringAvg)}</span>
       </div>
-      {tiles.map(([l, v, sub]) => (
+      {tiles.map(([l, v, sub, t]) => (
         <div className="t3" key={l}>
           <span className="l">{l}</span>
-          <span className="v">{v}</span>
+          <span className={`v ${t}`}>{v}</span>
           <span className="s">{sub}</span>
         </div>
       ))}
+      <span className="muted small benchnote">Typical figures: {BENCHMARK_SOURCE}, blended for your handicap.</span>
     </div>
   )
 }
@@ -181,7 +194,9 @@ function Section({ title, sg, rows, children }: { title: string; sg?: number | n
 }
 
 /** The deeper dive: one section each for scoring, tee shots, approaches, short game and putting. */
-export function StatSections({ s, rounds, stableford }: { s: Summary; rounds: RoundFacts[]; stableford: number | null }) {
+export function StatSections({ s, rounds, stableford, index }: { s: Summary; rounds: RoundFacts[]; stableford: number | null; index: number }) {
+  const bm = benchmarkFor(index)
+  const typ = (v: string) => `typical ${hcpLabel(index)}: ${v}`
   const holes = rounds.flatMap((r) => r.holes.filter((h) => h.score != null && h.score > 0))
   const n = holes.length
   const perRound = (k: number) => (n ? ((k / n) * 18).toFixed(1) : '–')
@@ -202,6 +217,7 @@ export function StatSections({ s, rounds, stableford }: { s: Summary; rounds: Ro
         title="Scoring"
         rows={[
           ['Scoring average', num(s.scoringAvg), s.fullRounds ? `${s.fullRounds} full round${s.fullRounds > 1 ? 's' : ''}` : 'no full rounds yet'],
+          ['Score to par', s.toParAvg == null ? '–' : `${s.toParAvg >= 0 ? '+' : '−'}${Math.abs(s.toParAvg).toFixed(1)}`, typ(`+${bm.toPar.toFixed(1)}`)],
           ['Stableford average', num(stableford), 'points a round'],
           ['Best round', best ? String(best.gross) : '–', best ? `${best.course}` : ''],
           ...byPar,
@@ -215,7 +231,7 @@ export function StatSections({ s, rounds, stableford }: { s: Summary; rounds: Ro
         title="Off the tee"
         sg={s.sg.tee}
         rows={[
-          ['Fairways hit', share(s.fairways), 'par 4s and 5s'],
+          ['Fairways hit', share(s.fairways), typ(share(bm.fairways))],
           ['Missed left', share(s.missLeft), 'of missed fairways'],
           ['Missed right', share(s.missRight), 'of missed fairways'],
           ['Penalties off the tee', num(s.teePenaltiesPerRound), 'per round', (s.teePenaltiesPerRound ?? 0) >= 1 ? 'bad' : ''],
@@ -225,7 +241,7 @@ export function StatSections({ s, rounds, stableford }: { s: Summary; rounds: Ro
         title="Approach shots"
         sg={s.sg.approach}
         rows={[
-          ['Greens in regulation', share(s.gir), s.gir != null ? `${Math.round(s.gir * 18)} a round` : ''],
+          ['Greens in regulation', share(s.gir), typ(share(bm.gir))],
           ['Missed short', missPct(m.short), 'of missed greens'],
           ['Missed long', missPct(m.long), 'of missed greens'],
           ['Missed left', missPct(m.left), 'of missed greens'],
@@ -248,15 +264,15 @@ export function StatSections({ s, rounds, stableford }: { s: Summary; rounds: Ro
         title="Short game"
         sg={s.sg.around}
         rows={[
-          ['Scrambling', share(s.scrambling), 'par or better after missing the green'],
-          ['Sand saves', share(s.sandSaves), 'par or better from a greenside bunker', s.sandSaves != null && s.sandSaves < 0.3 ? 'bad' : ''],
+          ['Scrambling', share(s.scrambling), `par or better after missing the green · ${typ(share(bm.scrambling))}`],
+          ['Sand saves', share(s.sandSaves), `from a greenside bunker · ${typ(share(bm.sandSaves))}`, s.sandSaves != null && s.sandSaves < 0.3 ? 'bad' : ''],
         ]}
       />
       <Section
         title="Putting"
         sg={s.sg.putting}
         rows={[
-          ['Putts', num(s.puttsPerRound), 'per round'],
+          ['Putts', num(s.puttsPerRound), `per round · ${typ(num(bm.putts))}`],
           ['Putts per green in reg', num(s.puttsPerGir, 2), 'when you hit the green'],
           ['Three-putts', num(s.threePuttsPerRound), 'per round', (s.threePuttsPerRound ?? 0) >= 1.5 ? 'bad' : ''],
           ...s.puttsByBand

@@ -75,7 +75,7 @@ export function HomeScreen({ profile }: { profile: Profile }) {
                   Last {last.length} round{last.length > 1 ? 's' : ''}
                 </span>
               </div>
-              <KeyStats s={summary} />
+              <KeyStats s={summary} index={profile.handicapIndex} />
               <button className="secondary block" style={{ marginTop: 0 }} onClick={() => go('stats')}>
                 View more stats ›
               </button>
