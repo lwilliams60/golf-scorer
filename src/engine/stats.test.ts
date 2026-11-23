@@ -67,4 +67,18 @@ describe('summary and focus', () => {
     const tee = focusAreas({ ...s, sg: { tee: -5, approach: null, around: null, putting: null } })
     expect(tee[0].title).toMatch(/right/)
   })
+  it('breaks approaches down by distance and names the weakest one', () => {
+    const app = [
+      ...[0, 1, 2].map(() => holeFacts(4, 4, { approach: 'green', approachDist: '100-125', putts: 2 })),
+      holeFacts(4, 5, { approach: 'short', approachDist: '150-175', putts: 2 }),
+      holeFacts(4, 5, { approach: 'short', approachDist: '150-175', putts: 2 }),
+      holeFacts(4, 4, { approach: 'green', approachDist: '150-175', putts: 2 }),
+    ]
+    const a = summarise([rf(app)])
+    const b = a.approachByBand.find((x) => x.band === '150-175')!
+    expect(b).toMatchObject({ shots: 3, greens: 1, topMiss: 'short', topMissShare: 1 })
+    const f = focusAreas({ ...a, sg: { tee: null, approach: -3, around: null, putting: null } })
+    expect(f[0].title).toBe('Approaches from 150–175 yds')
+    expect(f[0].body).toMatch(/1 of 3 greens hit, mostly missing short/)
+  })
 })

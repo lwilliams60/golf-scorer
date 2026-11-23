@@ -1,5 +1,5 @@
 import { holePar } from './handicap'
-import type { ApproachResult, HoleStats, PuttBand, Round, TeeResult } from './types'
+import type { ApproachBand, ApproachResult, HoleStats, PuttBand, Round, TeeResult } from './types'
 
 /** Expected putts for a scratch-standard putter from the middle of each distance band (from published tour putting averages). */
 export const PUTT_BASELINE: Record<PuttBand, number> = { u3: 1.03, '3-10': 1.4, '10-20': 1.78, '20-40': 1.98, '40+': 2.14 }
@@ -10,6 +10,15 @@ export const PUTT_BANDS: { id: PuttBand; label: string }[] = [
   { id: '20-40', label: '20–40 ft' },
   { id: '40+', label: '40 ft+' },
 ]
+export const APPROACH_BANDS: { id: ApproachBand; label: string }[] = [
+  { id: 'u100', label: 'Under 100' },
+  { id: '100-125', label: '100–125' },
+  { id: '125-150', label: '125–150' },
+  { id: '150-175', label: '150–175' },
+  { id: '175-200', label: '175–200' },
+  { id: '200+', label: '200+' },
+]
+export const approachBandLabel = (b: ApproachBand) => `${APPROACH_BANDS.find((x) => x.id === b)!.label.replace('Under 100', 'under 100')} yds`
 
 /**
  * Simplified strokes-gained weights against a scratch golfer. These are estimates from typical
@@ -31,6 +40,7 @@ export interface HoleFacts {
   score: number | null
   tee: TeeResult | null
   approach: ApproachResult | null
+  approachDist: ApproachBand | null
   gir: boolean | null
   putts: number | null
   firstPutt: PuttBand | null
@@ -75,7 +85,7 @@ export function holeFacts(par: number, gross: number | null | undefined, s: Hole
   }
   if (firstPutt && putts != null && putts > 0) sg.putting = Math.round((PUTT_BASELINE[firstPutt] - putts) * 100) / 100
 
-  return { par, score, tee, approach, gir, putts, firstPutt, scrambleChance, scrambled, sandChance, sandSaved, sg }
+  return { par, score, tee, approach, approachDist: s.approachDist ?? null, gir, putts, firstPutt, scrambleChance, scrambled, sandChance, sandSaved, sg }
 }
 
 export interface RoundFacts {
@@ -126,6 +136,8 @@ export interface Summary {
   /** Strokes gained per 18 holes, per category; null where nothing was logged. */
   sg: { tee: number | null; approach: number | null; around: number | null; putting: number | null }
   puttsByBand: { band: PuttBand; holes: number; avgPutts: number | null }[]
+  /** Greens hit and where misses went, by approach distance (only shots with a distance logged). */
+  approachByBand: { band: ApproachBand; shots: number; greens: number; topMiss: Exclude<ApproachResult, 'green'> | null; topMissShare: number }[]
 }
 
 export function summarise(rounds: RoundFacts[]): Summary {
@@ -164,6 +176,14 @@ export function summarise(rounds: RoundFacts[]): Summary {
       const hs = holes.filter((h) => h.firstPutt === band && h.putts != null)
       return { band, holes: hs.length, avgPutts: avg(hs.map((h) => h.putts!)) }
     }),
+    approachByBand: APPROACH_BANDS.map(({ id: band }) => {
+      const hs = holes.filter((h) => h.approachDist === band && h.approach)
+      const miss = { short: 0, long: 0, left: 0, right: 0, bunker: 0 }
+      for (const h of hs) if (h.approach !== 'green') miss[h.approach!]++
+      const missed = hs.length - hs.filter((h) => h.approach === 'green').length
+      const top = (Object.entries(miss) as [Exclude<ApproachResult, 'green'>, number][]).sort((a, b) => b[1] - a[1])[0]
+      return { band, shots: hs.length, greens: hs.length - missed, topMiss: top[1] ? top[0] : null, topMissShare: missed ? top[1] / missed : 0 }
+    }),
   }
 }
 
@@ -198,7 +218,12 @@ export function focusAreas(s: Summary): Focus[] {
         : top[0] === 'long' && share >= 0.4
           ? `${Math.round(share * 100)}% of missed greens go long. Check your carry distances on a launch monitor or range with yardage markers.`
           : `Hitting ${p(s.gir)} of greens in regulation. Range: 9-shot challenge with your 7-iron, 3 balls each to a short, middle and long target.`
-    out.push({ area: 'approach', sg: s.sg.approach, title: 'Approach shots', body })
+    const banded = (s.approachByBand ?? []).filter((b) => b.shots >= 3)
+    const worst = banded.length >= 2 ? [...banded].sort((a, b) => a.greens / a.shots - b.greens / b.shots)[0] : null
+    const where = worst
+      ? ` Your weakest distance is ${approachBandLabel(worst.band)}: ${worst.greens} of ${worst.shots} greens hit${worst.topMiss && worst.topMissShare >= 0.5 ? `, mostly missing ${worst.topMiss === 'bunker' ? 'into bunkers' : worst.topMiss}` : ''}.`
+      : ''
+    out.push({ area: 'approach', sg: s.sg.approach, title: worst ? `Approaches from ${approachBandLabel(worst.band)}` : 'Approach shots', body: body + where })
   }
   if (s.sg.around != null) {
     const sandWorse = s.sandSaves != null && (s.scrambling == null || s.sandSaves < s.scrambling)
