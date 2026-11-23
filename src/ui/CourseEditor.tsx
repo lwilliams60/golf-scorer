@@ -85,7 +85,7 @@ export function CourseEditor({ course, onSave, onCancel }: { course?: Course; on
         </p>
         <h2>Tees</h2>
         {tees.map((t, i) => (
-          <div className="prow" key={i}>
+          <div className="prow edit" key={i}>
             <input className="pname" placeholder="Tee name" value={t.name} onChange={(e) => setTees(tees.map((x, k) => (k === i ? { ...x, name: e.target.value } : x)))} />
             <input className="pidx" placeholder="CR" inputMode="decimal" value={t.cr} onChange={(e) => setTees(tees.map((x, k) => (k === i ? { ...x, cr: e.target.value } : x)))} />
             <input className="pidx" placeholder="Slope" inputMode="numeric" value={t.slope} onChange={(e) => setTees(tees.map((x, k) => (k === i ? { ...x, slope: e.target.value } : x)))} />

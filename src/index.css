@@ -73,9 +73,6 @@ main .link { color: var(--accent); }
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .list li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; cursor: pointer; }
 .prow { display: flex; gap: 6px; margin: 8px 0; align-items: center; }
-.prow .pname { flex: 2; min-width: 0; }
-.prow .pidx { flex: 0 0 72px; }
-.prow select { width: auto; flex: 0 0 auto; padding: 10px 6px; }
 .x { border: 0; background: none; font-size: 1.4rem; color: var(--muted); width: 32px; cursor: pointer; }
 .game { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px 10px; margin: 8px 0; }
 .game.on { border-color: var(--accent); }
@@ -199,3 +196,13 @@ main .link { color: var(--accent); }
 .bigtitle { font: 700 32px var(--display); margin: 8px 0; }
 .lead { font-size: 16px; line-height: 1.5; color: var(--muted); margin: 0 0 18px; }
 input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.prow.edit .pname { flex: 2; min-width: 0; }
+.prow.edit .pidx { flex: 0 0 76px; }
+.pcard { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin: 8px 0; display: flex; flex-direction: column; gap: 10px; }
+.pcard-top { display: flex; gap: 6px; align-items: center; }
+.pcard-row { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 8px; }
+.pcard-row.withgroup { grid-template-columns: 80px minmax(0, 1fr) 72px; }
+.pcard-row label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pcard-row label span { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.pcard input, .pcard select { background: var(--bg); }
+.pcard select { padding-left: 10px; padding-right: 6px; }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { go } from '../nav'
 import { allCourses, saveCourse } from '../data/courses'
 import { DEFAULT_ALLOWANCE, GAME_LABELS } from '../engine/games'
+import { teeLabel } from '../engine/handicap'
 import type { Course, GameConfig, GameType, Gender } from '../engine/types'
 import { setMyPlayerIn, type Profile } from '../store/profile'
 import { key, newCode, newId, writeMany, type Setup, type StoredPlayer } from '../store/round'
@@ -193,32 +194,43 @@ export function CreateRound({ profile }: { profile: Profile }) {
         </h2>
         <p className="muted small">Tees can be changed on the first tee by each player.</p>
         {rows.map((r, i) => (
-          <div className="prow" key={r.id}>
-            <input className="pname" value={r.name} placeholder={`Player ${i + 1}`} onChange={(e) => upd(r.id, { name: e.target.value })} />
-            <input className="pidx" inputMode="decimal" value={r.index} placeholder="H'cap" onChange={(e) => upd(r.id, { index: e.target.value })} />
-            <select value={r.gender} onChange={(e) => upd(r.id, { gender: e.target.value as Gender })}>
-              <option value="m">M</option>
-              <option value="w">W</option>
-            </select>
-            <select value={r.tee} onChange={(e) => upd(r.id, { tee: e.target.value })}>
-              {course?.tees.map((t) => (
-                <option key={t.name}>{t.name}</option>
-              ))}
-            </select>
-            {!autoGroups && (
-              <select value={r.group} onChange={(e) => upd(r.id, { group: Number(e.target.value) })}>
-                {Array.from({ length: 8 }, (_, k) => (
-                  <option key={k} value={k + 1}>
-                    G{k + 1}
-                  </option>
-                ))}
-              </select>
-            )}
-            {i > 0 && (
-              <button className="x" onClick={() => setPlayers((ps) => ps.filter((p) => p.id !== r.id))} aria-label="Remove">
-                ×
-              </button>
-            )}
+          <div className="pcard" key={r.id}>
+            <div className="pcard-top">
+              <input className="pname" aria-label="Name" value={r.name} placeholder={`Player ${i + 1}`} onChange={(e) => upd(r.id, { name: e.target.value })} />
+              {i > 0 && (
+                <button className="x" onClick={() => setPlayers((ps) => ps.filter((p) => p.id !== r.id))} aria-label="Remove">
+                  ×
+                </button>
+              )}
+            </div>
+            <div className={`pcard-row ${autoGroups ? '' : 'withgroup'}`}>
+              <label>
+                <span>Handicap</span>
+                <input inputMode="decimal" value={r.index} placeholder="14.2" onChange={(e) => upd(r.id, { index: e.target.value })} />
+              </label>
+              <label>
+                <span>Tees</span>
+                <select value={r.tee} onChange={(e) => upd(r.id, { tee: e.target.value })}>
+                  {course?.tees.map((t) => (
+                    <option key={t.name} value={t.name}>
+                      {teeLabel(t, r.gender)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {!autoGroups && (
+                <label>
+                  <span>Group</span>
+                  <select value={r.group} onChange={(e) => upd(r.id, { group: Number(e.target.value) })}>
+                    {Array.from({ length: 8 }, (_, k) => (
+                      <option key={k} value={k + 1}>
+                        G{k + 1}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
           </div>
         ))}
         {rows.length < 32 && (
