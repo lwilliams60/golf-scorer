@@ -217,6 +217,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .warn { color: #FBBF24; }
 .top .title > .muted { display: block; }
 .keystats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.keystats .hero { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.keystats .hero .v { font-size: 30px; }
+.keystats .hero { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; }
+.keystats .hero-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.keystats .hero .l { font-size: 14px; color: var(--text, inherit); font-weight: 600; }
+.keystats .hero .s { font-size: 12.5px; }
+.keystats .hero .v { font-size: 40px; line-height: 1; color: var(--accent); }
 .statsec .standings { margin-top: 6px; }

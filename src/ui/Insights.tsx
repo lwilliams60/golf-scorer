@@ -131,9 +131,11 @@ export function KeyStats({ s }: { s: Summary }) {
   return (
     <div className="keystats">
       <div className="t3 hero">
-        <span className="l">Scoring average</span>
+        <div className="hero-text">
+          <span className="l">Scoring average</span>
+          <span className="s">{s.fullRounds ? `Over ${s.fullRounds} full round${s.fullRounds > 1 ? 's' : ''}` : 'No full rounds yet'}</span>
+        </div>
         <span className="v">{num(s.scoringAvg)}</span>
-        <span className="s">{s.fullRounds ? `${s.fullRounds} full round${s.fullRounds > 1 ? 's' : ''}` : 'no full rounds yet'}</span>
       </div>
       {tiles.map(([l, v, sub]) => (
         <div className="t3" key={l}>
