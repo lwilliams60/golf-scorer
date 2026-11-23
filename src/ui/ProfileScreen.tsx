@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { saveProfile, type Profile } from '../store/profile'
+import type { Profile } from '../store/profile'
+import { phoneSignIn, saveProfileToAccount, signOut } from '../store/auth'
+import { go } from '../nav'
 import type { Gender } from '../engine/types'
 import { newId } from '../store/round'
 
@@ -13,6 +15,11 @@ export function ProfileScreen({ profile, onSave }: { profile: Profile | null; on
   return (
     <div className="screen">
       <header className="top">
+        {profile && (
+          <button className="link" onClick={() => go('')}>
+            ‹ Back
+          </button>
+        )}
         <h1>{profile ? 'Your details' : 'Welcome'}</h1>
       </header>
       <main className="pad">
@@ -41,12 +48,17 @@ export function ProfileScreen({ profile, onSave }: { profile: Profile | null; on
           disabled={!valid}
           onClick={() => {
             const p: Profile = { id: profile?.id ?? newId(), name: name.trim(), handicapIndex: idx, gender }
-            saveProfile(p)
+            saveProfileToAccount(p).catch(() => {})
             onSave(p)
           }}
         >
           Save
         </button>
+        {phoneSignIn && profile && (
+          <button className="secondary block" onClick={() => signOut()}>
+            Sign out
+          </button>
+        )}
       </main>
     </div>
   )

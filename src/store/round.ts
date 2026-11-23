@@ -100,7 +100,11 @@ export async function flushQueue(): Promise<number> {
       } catch {
         break
       }
-      q = readQueue().slice(1)
+      // Only drop the write we just sent. If the player tapped again while it was in flight,
+      // the newer value is still queued and goes next.
+      q = readQueue()
+      const i = q.findIndex((x) => x.code === w.code && x.k === w.k && JSON.stringify(x.v) === JSON.stringify(w.v))
+      if (i >= 0) q.splice(i, 1)
       writeQueue(q)
     }
     return q.length
@@ -136,6 +140,8 @@ export function useRound(code: string) {
   useEffect(() => {
     let alive = true
     const apply = (k: string, v: unknown) => {
+      // A live update can echo an older value while this phone still has a newer one waiting to send.
+      if (readQueue().some((w) => w.code === code && w.k === k)) return
       ref.current = { ...ref.current, [k]: v }
       setEntries(ref.current)
     }

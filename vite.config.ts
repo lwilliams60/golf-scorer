@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'Golf Scorer',
         short_name: 'Golf',
         description: 'Scores, stats and side games for your golf group',
-        theme_color: '#1f6b3a',
-        background_color: '#f4f6f2',
+        theme_color: '#121619',
+        background_color: '#121619',
         display: 'standalone',
         start_url: '/',
         icons: [

@@ -1,4 +1,4 @@
-import type { Course, Hole, Player, Tee, TeeRating } from './types'
+import type { Course, Gender, Hole, Player, Tee, TeeRating } from './types'
 
 export function teeFor(course: Course, player: Player): Tee {
   return course.tees.find((t) => t.name === player.tee) ?? course.tees[0]
@@ -50,4 +50,11 @@ export function strokesOnHole(ph: number, si: number, holes = 18): number {
 /** Strokes per hole (array of 18) for a player at a playing handicap. */
 export function strokeMap(course: Course, player: Player, ph: number): number[] {
   return course.holes.map((h) => strokesOnHole(ph, holeSI(h, player), course.holes.length))
+}
+
+/** "Black · Par 69 · 5,902 yds" for tee pickers. */
+export function teeLabel(tee: Tee, gender: Gender = 'm'): string {
+  const r = gender === 'w' ? (tee.ratings.women ?? tee.ratings.men) : (tee.ratings.men ?? tee.ratings.women)
+  const total = tee.total || tee.yards.reduce((a, b) => a + (b || 0), 0)
+  return [tee.name, r?.par ? `Par ${r.par}` : '', total ? `${total.toLocaleString('en-GB')} yds` : ''].filter(Boolean).join(' · ')
 }
