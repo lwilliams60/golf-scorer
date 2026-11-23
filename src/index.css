@@ -365,3 +365,5 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .grp-list select { flex: none; max-width: 46%; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); color: var(--ink); font: inherit; font-size: 0.85rem; }
 .join-sub { font-size: 0.95rem; margin: 22px 0 6px; }
 .join-hint { margin: 8px 0 4px; }
+.pair-pick { display: flex; gap: 8px; align-items: center; }
+.pair-pick select { flex: 1; min-width: 0; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); color: var(--ink); font: inherit; }

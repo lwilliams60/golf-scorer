@@ -26,7 +26,7 @@ interface GameOpt {
   stake: string
   allowance: string
   extra?: string
-  mode?: 'stableford' | 'match'
+  mode?: 'stableford' | 'match' | 'net' | 'gross'
   a?: string
   b?: string
 }
@@ -56,7 +56,7 @@ const FIELD_GAMES: GameType[] = ['stableford', 'stroke', 'skins', 'betterBall', 
 
 const HELP: Partial<Record<GameType, string>> = {
   stableford: 'Points per hole on net score. Whole field.',
-  stroke: 'Net strokes, lowest total wins. Money is per stroke.',
+  stroke: 'Lowest total wins, net or gross. Money is per stroke.',
   skins: 'Outright best net score wins the skin; ties carry over.',
   betterBall: 'Pairs within each group (1st & 2nd v 3rd & 4th).',
   wolf: 'Each group of exactly 4.',
@@ -131,12 +131,11 @@ export function CreateRound({ profile }: { profile: Profile }) {
       const o = games[t]
       if (!o.on) continue
       const tp: GameTemplate = { type: t, allowance: Number(o.allowance) / 100, stake: Number(o.stake) || 0 }
+      if (t === 'stroke' && o.mode === 'gross') tp.gross = true
       if (t === 'snake') tp.snakeGrowth = Number(o.extra) || 0
       if (t === 'betterBall') tp.betterBallMode = o.mode === 'match' ? 'match' : 'stableford'
-      if (t === 'match' || t === 'nassau') {
-        if (!o.a || !o.b || o.a === o.b) continue
-        tp.pair = [o.a, o.b]
-      }
+      // No pair yet is fine: the organiser picks it once people have joined.
+      if ((t === 'match' || t === 'nassau') && o.a && o.b && o.a !== o.b) tp.pair = [o.a, o.b]
       templates.push(tp)
     }
     const cfg = expandGames(templates, groups)
@@ -283,8 +282,6 @@ export function CreateRound({ profile }: { profile: Profile }) {
         <h2>Games</h2>
         {FIELD_GAMES.map((t) => {
           const o = games[t]
-          const hidden = (t === 'wolf' && !groupSizes.includes(4)) || (t === 'sixPoint' && !groupSizes.includes(3)) || ((t === 'match' || t === 'nassau') && rows.length < 2)
-          if (hidden) return null
           return (
             <div className={`game ${o.on ? 'on' : ''}`} key={t}>
               <div className="game-head">
@@ -304,9 +301,14 @@ export function CreateRound({ profile }: { profile: Profile }) {
               </div>
               <p className="muted small">{HELP[t]}</p>
               {rulesOpen === t && <RulesPanel type={t} />}
+              {o.on && t === 'wolf' && !groupSizes.includes(4) && <p className="muted small">Runs in every group that ends up with exactly 4 once people join.</p>}
+              {o.on && t === 'sixPoint' && !groupSizes.includes(3) && <p className="muted small">Runs in every group that ends up with exactly 3 once people join.</p>}
+              {o.on && (t === 'match' || t === 'nassau') && rows.length < 2 && (
+                <p className="muted small">Pick the two players from the groups screen once they've joined.</p>
+              )}
               {o.on && (
                 <div className="opts">
-                  {t !== 'snake' && (
+                  {t !== 'snake' && !(t === 'stroke' && o.mode === 'gross') && (
                     <label>
                       Allowance %
                       <input inputMode="numeric" value={o.allowance} onChange={(e) => updGame(t, { allowance: e.target.value })} />
@@ -316,6 +318,15 @@ export function CreateRound({ profile }: { profile: Profile }) {
                     £ {t === 'skins' ? 'per skin' : t === 'match' || t === 'nassau' || t === 'scramble' ? 'per bet' : t === 'stroke' ? 'per stroke' : t === 'snake' ? 'snake' : 'per point'}
                     <input inputMode="decimal" value={o.stake} placeholder="0" onChange={(e) => updGame(t, { stake: e.target.value })} />
                   </label>
+                  {t === 'stroke' && (
+                    <label>
+                      Scoring
+                      <select value={o.mode === 'gross' ? 'gross' : 'net'} onChange={(e) => updGame(t, { mode: e.target.value as GameOpt['mode'] })}>
+                        <option value="net">Net</option>
+                        <option value="gross">Gross</option>
+                      </select>
+                    </label>
+                  )}
                   {t === 'snake' && (
                     <label>
                       + £ per 3-putt
@@ -331,7 +342,7 @@ export function CreateRound({ profile }: { profile: Profile }) {
                       </select>
                     </label>
                   )}
-                  {(t === 'match' || t === 'nassau') && (
+                  {(t === 'match' || t === 'nassau') && rows.length >= 2 && (
                     <>
                       {(['a', 'b'] as const).map((side) => (
                         <label key={side}>

@@ -30,6 +30,8 @@ export const key = {
   stat: (pid: string, i: number) => `st|${pid}|${i}`,
   wolf: (gid: string, i: number) => `w|${gid}|${i}`,
   scorer: (gid: string) => `scorer|${gid}`,
+  /** Players for a match play or Nassau game, picked by the organiser after people have joined. */
+  pair: (type: string) => `pair|${type}`,
 }
 
 export function assemble(code: string, e: Entries): Round | null {
@@ -41,6 +43,7 @@ export function assemble(code: string, e: Entries): Round | null {
   const stats: Round['stats'] = {}
   const wolf: Round['wolf'] = {}
   const scorers: Record<string, string | null> = {}
+  const pairs: Record<string, [string, string]> = {}
   const n = setup.course.holes.length
   const arr = <T,>(m: Record<string, T[]>, id: string, fill: T) => (m[id] ??= Array.from({ length: n }, () => fill))
   for (const [k, v] of Object.entries(e)) {
@@ -52,11 +55,16 @@ export function assemble(code: string, e: Entries): Round | null {
     else if (kind === 'st') arr(stats, a, {} as HoleStats)[i] = v as HoleStats
     else if (kind === 'w') arr(wolf, a, null as WolfChoice | null)[i] = v as WolfChoice | null
     else if (kind === 'scorer') scorers[a] = v as string | null
+    else if (kind === 'pair') pairs[a] = v as [string, string]
   }
   const groups = placeGroups(setup.groups, players)
   const order = groups.flatMap((g) => g.players)
   players.sort((x, y) => order.indexOf(x.id) - order.indexOf(y.id))
-  const games = setup.templates ? expandGames(setup.templates, groups) : setup.games
+  const templates = setup.templates?.map((t) => (pairs[t.type] ? { ...t, pair: pairs[t.type] } : t))
+  const games = templates ? expandGames(templates, groups) : setup.games
+  const pairsToPick = (templates ?? [])
+    .filter((t): t is typeof t & { type: 'match' | 'nassau' } => t.type === 'match' || t.type === 'nassau')
+    .map((t) => ({ type: t.type, pair: t.pair }))
   return {
     id: code,
     code,
@@ -71,6 +79,7 @@ export function assemble(code: string, e: Entries): Round | null {
     stats,
     wolf,
     createdBy: setup.createdBy,
+    pairsToPick,
     updatedAt: Date.now(),
   }
 }
