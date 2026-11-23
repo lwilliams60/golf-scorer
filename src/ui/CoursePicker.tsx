@@ -71,8 +71,7 @@ export function CoursePicker({
       <input
         type="search"
         value={q}
-        autoFocus={!selected}
-        placeholder="Search courses, e.g. Newbury"
+        placeholder="Choose or search a course"
         aria-label="Search courses"
         onChange={(e) => {
           setQ(e.target.value)
