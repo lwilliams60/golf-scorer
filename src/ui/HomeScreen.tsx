@@ -6,7 +6,6 @@ import { loadMyRounds, type MyRound } from '../store/history'
 import { focusAreas, summarise } from '../engine/stats'
 import { mantraFor } from '../data/mantras'
 import { FocusList, KeyStats, money, shortDate } from './Insights'
-import { ShareWithCoach } from './CoachShare'
 
 const SNAPSHOT = 6
 
@@ -82,7 +81,6 @@ export function HomeScreen({ profile }: { profile: Profile }) {
               </button>
             </section>
             <FocusList focus={focus} />
-            <ShareWithCoach profile={profile} mine={mine!} />
             <section className="stack" style={{ gap: 10 }}>
               <div className="sechead">
                 <h2>Recent rounds</h2>

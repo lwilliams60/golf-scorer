@@ -4,6 +4,7 @@ import type { Profile } from '../store/profile'
 import { loadMyRounds, type MyRound } from '../store/history'
 import { focusAreas, summarise } from '../engine/stats'
 import { FocusList, SgBars, StatSections, shortDate } from './Insights'
+import { ShareWithCoach } from './CoachShare'
 
 export function StatsScreen({ profile }: { profile: Profile }) {
   const [mine, setMine] = useState<MyRound[] | null>(null)
@@ -59,6 +60,7 @@ export function StatsScreen({ profile }: { profile: Profile }) {
                 </tbody>
               </table>
             </section>
+            <ShareWithCoach profile={profile} mine={mine} />
           </>
         )}
       </main>
