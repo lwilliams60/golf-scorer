@@ -36,7 +36,8 @@ export async function loadMyRounds(profile: Profile): Promise<MyRound[]> {
     const facts = roundFacts(round, pid)
     if (facts.holesPlayed === 0) continue
     const p = round.players.find((x) => x.id === pid)!
-    const ph = playingHandicap(round.course, p, 0.95)
+    const allowance = round.games.find((g) => g.type === 'stableford')?.allowance ?? 1
+    const ph = playingHandicap(round.course, p, allowance)
     const points = round.course.holes.reduce((s, _, i) => s + (stablefordPoints(round, pid, i, ph) ?? 0), 0)
     let money = 0
     try {

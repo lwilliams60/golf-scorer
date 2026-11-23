@@ -37,8 +37,8 @@ export const GAME_LABELS: Record<GameConfig['type'], string> = {
 }
 
 export const DEFAULT_ALLOWANCE: Record<GameConfig['type'], number> = {
-  stroke: 0.95,
-  stableford: 0.95,
+  stroke: 1,
+  stableford: 1,
   match: 1,
   betterBall: 0.85,
   skins: 1,
