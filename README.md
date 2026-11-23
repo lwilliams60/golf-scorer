@@ -1,54 +1,22 @@
-# React + TypeScript + Vite
+# Golf Scorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Scores, stats and side games for golf groups of 2 to 32. Installable web app (add to home screen on iPhone or Android).
 
-Currently, two official plugins are available:
+- Formats: Stroke play, Stableford, Match play, Better ball, Skins, Nassau, Texas scramble, Six Point, Wolf, Snake
+- WHS handicaps (course handicap from slope and rating, allowances per format)
+- One scorer per group or everyone scores themselves; personal stats entered by each player
+- Live sync between phones via Supabase; works offline and catches up when signal returns
+- Money games with a settle-up screen
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Run locally
 
-## Expanding the ESLint configuration
+    npm install
+    npm run dev      # app
+    npm test         # scoring engine tests
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Without Supabase settings the app runs in test mode (rounds saved on one device only).
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Live sync
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+1. Create a Supabase project and run `supabase/schema.sql` in its SQL editor.
+2. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (see `.env.example`) in Vercel or `.env.local`.
