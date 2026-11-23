@@ -3,7 +3,7 @@ import { go } from '../nav'
 import type { Profile } from '../store/profile'
 import { loadMyRounds, type MyRound } from '../store/history'
 import { focusAreas, summarise } from '../engine/stats'
-import { FocusList, PuttingTable, SgBars, Tiles, shortDate } from './Insights'
+import { FocusList, SgBars, StatSections, shortDate } from './Insights'
 
 export function StatsScreen({ profile }: { profile: Profile }) {
   const [mine, setMine] = useState<MyRound[] | null>(null)
@@ -14,10 +14,6 @@ export function StatsScreen({ profile }: { profile: Profile }) {
   const list = useMemo(() => (range ? (mine ?? []).slice(0, range) : (mine ?? [])), [mine, range])
   const s = useMemo(() => summarise(list.map((m) => m.facts)), [list])
   const full = list.filter((m) => m.facts.holesPlayed === 18)
-  const byPar = [3, 4, 5].map((par) => {
-    const hs = list.flatMap((m) => m.facts.holes.filter((h) => h.par === par && h.score != null))
-    return { par, n: hs.length, avg: hs.length ? hs.reduce((a, h) => a + h.score!, 0) / hs.length : null }
-  })
 
   return (
     <div className="screen">
@@ -39,25 +35,9 @@ export function StatsScreen({ profile }: { profile: Profile }) {
                 </button>
               ))}
             </div>
-            <Tiles s={s} stableford={full.length ? full.reduce((a, m) => a + m.points, 0) / full.length : null} />
+            <StatSections s={s} rounds={list.map((m) => m.facts)} stableford={full.length ? full.reduce((a, m) => a + m.points, 0) / full.length : null} />
             <SgBars s={s} />
             <FocusList focus={focusAreas(s)} />
-            <PuttingTable s={s} />
-            <section className="card">
-              <div className="sechead">
-                <h2>Scoring by par</h2>
-              </div>
-              <table className="standings">
-                <tbody>
-                  {byPar.map((b) => (
-                    <tr key={b.par}>
-                      <td>Par {b.par}s</td>
-                      <td className="val">{b.avg == null ? '–' : `${b.avg.toFixed(2)} (${b.avg - b.par >= 0 ? '+' : ''}${(b.avg - b.par).toFixed(2)})`}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
             <section className="card">
               <div className="sechead">
                 <h2>Rounds</h2>
