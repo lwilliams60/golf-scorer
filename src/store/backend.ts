@@ -104,4 +104,6 @@ function supabaseBackend(sb: SupabaseClient): Backend {
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-export const backend: Backend = url && key ? supabaseBackend(createClient(url, key)) : localBackend
+/** The shared Supabase client, or null in test mode. */
+export const sb: SupabaseClient | null = url && key ? createClient(url, key) : null
+export const backend: Backend = sb ? supabaseBackend(sb) : localBackend

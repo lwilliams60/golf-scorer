@@ -3,7 +3,8 @@ import { go } from '../nav'
 import { courseHandicap, holePar, holeSI, playingHandicap, strokesOnHole, teeFor } from '../engine/handicap'
 import { currentWolf } from '../engine/games'
 import { moneyTotals, roundResults, settle } from '../engine/settle'
-import type { FairwayResult, HoleStats, Player, Round, WolfChoice } from '../engine/types'
+import type { ApproachResult, HoleStats, Player, PuttBand, Round, TeeResult, WolfChoice } from '../engine/types'
+import { holeFacts, PUTT_BANDS } from '../engine/stats'
 import { backend } from '../store/backend'
 import { key, useRound } from '../store/round'
 import { myPlayerIn, type Profile } from '../store/profile'
@@ -45,6 +46,7 @@ export function RoundScreen({ code, profile }: { code: string; profile: Profile 
 
   return (
     <div className="screen">
+      <div className="sticky">
       <header className="top">
         <button className="link" onClick={() => go('')}>
           ‹ Home
@@ -69,6 +71,7 @@ export function RoundScreen({ code, profile }: { code: string; profile: Profile 
           </button>
         ))}
       </nav>
+      </div>
       {tab === 'card' && <Scorecard round={round} me={me} set={set} profile={profile} />}
       {tab === 'board' && <Board round={round} />}
       {tab === 'settle' && <Settle round={round} />}
@@ -116,7 +119,7 @@ function Scorecard({ round, me, set }: { round: Round; me: string; set: (k: stri
   const setStat = (patch: Partial<HoleStats>) => set(key.stat(me, hole), { ...myStats, ...patch })
 
   return (
-    <main className="pad card">
+    <main className="pad">
       {round.groups.length > 1 && (
         <select className="groupsel" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
           {round.groups.map((g, i) => (
@@ -201,64 +204,20 @@ function Scorecard({ round, me, set }: { round: Round; me: string; set: (k: stri
           </div>
         )
       })}
-      {scorer && scorer !== me && <p className="muted small">{byId(scorer).name} is scoring for this group. You can still log your own stats below.</p>}
+      {scorer && scorer !== me && <p className="muted small">{byId(scorer).name} is scoring for this group. You can still log your own shots below.</p>}
 
-      {group.players.includes(me) && (
-        <section className="stats">
-          <h3>My stats</h3>
-          {holePar(h, meP) > 3 && (
-            <div className="statrow">
-              <span>Fairway</span>
-              <div className="seg">
-                {(['left', 'hit', 'right'] as FairwayResult[]).map((f) => (
-                  <button key={f} className={myStats.fairway === f ? 'on' : ''} onClick={() => setStat({ fairway: myStats.fairway === f ? undefined : f })}>
-                    {f === 'left' ? '← Left' : f === 'hit' ? 'Hit' : 'Right →'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="statrow">
-            <span>Green in reg</span>
-            <div className="seg">
-              {[true, false].map((b) => (
-                <button key={String(b)} className={myStats.gir === b ? 'on' : ''} onClick={() => setStat({ gir: myStats.gir === b ? undefined : b })}>
-                  {b ? 'Yes' : 'No'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="statrow">
-            <span>Putts</span>
-            <MiniStepper value={myStats.putts} start={2} onChange={(x) => setStat({ putts: x })} />
-          </div>
-          <div className="statrow">
-            <span>Penalties</span>
-            <MiniStepper value={myStats.penalties} start={1} onChange={(x) => setStat({ penalties: x })} />
-          </div>
-          <div className="statrow">
-            <span>Bunker</span>
-            <div className="seg">
-              {[true, false].map((b) => (
-                <button key={String(b)} className={myStats.bunker === b ? 'on' : ''} onClick={() => setStat({ bunker: myStats.bunker === b ? undefined : b })}>
-                  {b ? 'Yes' : 'No'}
-                </button>
-              ))}
-            </div>
-          </div>
-          {hole === 0 && (
-            <div className="statrow">
-              <span>My tees</span>
-              <select value={meP.tee} onChange={(e) => set(key.player(me), { ...meP, tee: e.target.value })}>
-                {round.course.tees.map((t) => (
-                  <option key={t.name}>{t.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          <p className="muted small">Course handicap {courseHandicap(round.course, meP)} off {meP.tee}.</p>
-        </section>
+      {group.players.includes(me) && <QuickStats par={holePar(h, meP)} gross={round.scores[me]?.[hole]} stats={myStats} onChange={setStat} />}
+      {group.players.includes(me) && hole === 0 && (
+        <div className="statrow" style={{ marginTop: 14 }}>
+          <span>My tees</span>
+          <select value={meP.tee} onChange={(e) => set(key.player(me), { ...meP, tee: e.target.value })}>
+            {round.course.tees.map((t) => (
+              <option key={t.name}>{t.name}</option>
+            ))}
+          </select>
+        </div>
       )}
+      {hole === 0 && <p className="muted small">Course handicap {courseHandicap(round.course, meP)} off {meP.tee}.</p>}
       <button className="primary block" disabled={hole === n - 1} onClick={() => setHole(hole + 1)}>
         Next hole ›
       </button>
@@ -280,13 +239,103 @@ function Stepper({ value, par, disabled, onChange }: { value: number | null; par
   )
 }
 
-function MiniStepper({ value, start, onChange }: { value?: number; start: number; onChange: (v: number | undefined) => void }) {
+const TEE_CHIPS: [TeeResult, string][] = [
+  ['left', '← Left'],
+  ['fairway', 'Fairway'],
+  ['right', 'Right →'],
+  ['bunker', 'Bunker'],
+  ['penalty', 'Penalty'],
+]
+const APPROACH_CHIPS: [ApproachResult, string][] = [
+  ['green', 'Green'],
+  ['short', 'Short'],
+  ['long', 'Long'],
+  ['left', 'Left'],
+  ['right', 'Right'],
+  ['bunker', 'Bunker'],
+]
+
+function Chips<T extends string | number>({ items, value, onPick }: { items: [T, string][]; value: T | undefined; onPick: (v: T | undefined) => void }) {
   return (
-    <div className="stepper mini">
-      <button onClick={() => onChange(value == null ? Math.max(0, start - 1) : value <= 0 ? undefined : value - 1)}>−</button>
-      <span className="val">{value ?? '–'}</span>
-      <button onClick={() => onChange(value == null ? start : Math.min(9, value + 1))}>+</button>
+    <div className="chips">
+      {items.map(([v, label]) => (
+        <button key={String(v)} className={`chip ${value === v ? 'on' : ''}`} aria-pressed={value === v} onClick={() => onPick(value === v ? undefined : v)}>
+          {label}
+        </button>
+      ))}
     </div>
+  )
+}
+
+/** A few taps per hole. Everything else (GIR, up and downs, sand saves, strokes gained) is worked out. */
+function QuickStats({ par, gross, stats, onChange }: { par: number; gross: number | null | undefined; stats: HoleStats; onChange: (p: Partial<HoleStats>) => void }) {
+  const tee = stats.tee ?? (stats.fairway === 'hit' ? 'fairway' : stats.fairway === 'left' || stats.fairway === 'right' ? stats.fairway : undefined)
+  const f = holeFacts(par, gross, stats)
+  const notes: string[] = []
+  if (f.gir === true) notes.push('Green in regulation')
+  if (f.gir === false) notes.push('Missed green')
+  if (f.sandChance && f.score != null) notes.push(f.sandSaved ? 'sand save' : 'bunker save missed')
+  else if (f.scrambleChance) notes.push(f.scrambled ? 'up and down' : 'up and down missed')
+  if (f.putts != null) notes.push(`${f.putts} putt${f.putts === 1 ? '' : 's'}${f.firstPutt ? ` from ${PUTT_BANDS.find((b) => b.id === f.firstPutt)!.label}` : ''}`)
+  const sg = (
+    [
+      ['tee', f.sg.tee],
+      ['approach', f.sg.approach],
+      ['around green', f.sg.around],
+      ['putting', f.sg.putting],
+    ] as [string, number | null][]
+  )
+    .filter(([, v]) => v != null)
+    .map(([k, v]) => `${k} ${v! > 0 ? '+' : v! < 0 ? '−' : ''}${Math.abs(v!).toFixed(1)}`)
+  return (
+    <section>
+      {par >= 4 && (
+        <div className="chipgroup">
+          <div className="sechead">
+            <strong>Tee shot</strong>
+            <span>par 4s and 5s</span>
+          </div>
+          <Chips items={TEE_CHIPS} value={tee} onPick={(v) => onChange({ tee: v, fairway: undefined })} />
+        </div>
+      )}
+      <div className="chipgroup">
+        <div className="sechead">
+          <strong>Approach</strong>
+          <span>green or where it missed</span>
+        </div>
+        <Chips items={APPROACH_CHIPS} value={stats.approach} onPick={(v) => onChange({ approach: v, gir: undefined })} />
+      </div>
+      <div className="chipgroup">
+        <div className="sechead">
+          <strong>First putt</strong>
+          <span>roughly how far</span>
+        </div>
+        <Chips items={PUTT_BANDS.map((b) => [b.id, b.label] as [PuttBand, string])} value={stats.firstPutt} onPick={(v) => onChange({ firstPutt: v })} />
+      </div>
+      <div className="puttrow">
+        <strong>Putts</strong>
+        <Chips
+          items={[
+            [0, '0'],
+            [1, '1'],
+            [2, '2'],
+            [3, '3'],
+            [4, '4+'],
+          ]}
+          value={stats.putts}
+          onPick={(v) => onChange({ putts: v })}
+        />
+      </div>
+      {notes.length > 0 && (
+        <div className="worked">
+          <span className="eyebrow">Worked out for you</span>
+          <span>
+            {notes.join(' · ')}
+            {sg.length > 0 && ` · strokes gained: ${sg.join(', ')}`}
+          </span>
+        </div>
+      )}
+    </section>
   )
 }
 

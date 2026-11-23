@@ -7,6 +7,10 @@ import { CreateRound } from './ui/CreateRound'
 import { JoinRound } from './ui/JoinRound'
 import { RoundScreen } from './ui/RoundScreen'
 import { StatsScreen } from './ui/StatsScreen'
+import { CoachScreen } from './ui/CoachShare'
+import { SignInScreen } from './ui/SignInScreen'
+import { phoneSignIn, profileFromSession, saveProfileToAccount, useSession } from './store/auth'
+import { saveProfile } from './store/profile'
 
 function useHash() {
   const [hash, setHash] = useState(() => window.location.hash.slice(1))
@@ -22,7 +26,25 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(loadProfile)
   const hash = useHash()
   const [route, arg] = hash.split('/')
+  const session = useSession()
 
+  // Signed in on a new phone: pick up name and handicap from the account.
+  useEffect(() => {
+    if (!session) return
+    const p = profileFromSession(session)
+    // First sign-in on a phone that already has a profile: keep its id so earlier rounds stay linked.
+    if (!p && profile) saveProfileToAccount(profile).catch(() => {})
+    if (p && (!profile || profile.id !== p.id || profile.name !== p.name || profile.handicapIndex !== p.handicapIndex)) {
+      saveProfile(p)
+      setProfile(p)
+    }
+  }, [session, profile])
+
+  if (route === 'coach' && arg) return <CoachScreen token={arg} />
+  if (phoneSignIn) {
+    if (session === undefined) return <div className="screen" />
+    if (session === null) return <SignInScreen />
+  }
   if (!profile || route === 'profile')
     return (
       <ProfileScreen

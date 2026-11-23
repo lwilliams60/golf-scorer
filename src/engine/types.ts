@@ -40,10 +40,18 @@ export interface Player {
 }
 
 export type FairwayResult = 'hit' | 'left' | 'right' | 'na'
+export type TeeResult = 'left' | 'fairway' | 'right' | 'bunker' | 'penalty'
+export type ApproachResult = 'green' | 'short' | 'long' | 'left' | 'right' | 'bunker'
+export type PuttBand = 'u3' | '3-10' | '10-20' | '20-40' | '40+'
 
 export interface HoleStats {
-  fairway?: FairwayResult
+  /** v2 quick entry */
+  tee?: TeeResult
+  approach?: ApproachResult
+  firstPutt?: PuttBand
   putts?: number
+  /** v1 fields, still read for older rounds */
+  fairway?: FairwayResult
   gir?: boolean
   penalties?: number
   bunker?: boolean
