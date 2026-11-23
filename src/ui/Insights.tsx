@@ -1,6 +1,7 @@
 import type { Focus, RoundFacts, Summary } from '../engine/stats'
 import { APPROACH_BANDS, PUTT_BANDS } from '../engine/stats'
-import { BENCHMARK_SOURCE, benchmarkFor, hcpLabel } from '../data/benchmarks'
+import { BENCHMARK_SOURCE, benchmarkFor, hcpLabel, playsLike, playsLikeLabel } from '../data/benchmarks'
+import { CardIcon, ChipIcon, FlagIcon, PuttIcon, TeeIcon } from './GolfIcons'
 
 const pct = (x: number | null) => (x == null ? '–' : `${Math.round(x * 100)}%`)
 const num = (x: number | null, d = 1) => (x == null ? '–' : x.toFixed(d))
@@ -123,41 +124,107 @@ export function shortDate(iso: string) {
 }
 
 /** The five headline numbers for the home screen. */
+type Tone = 'good' | 'bad' | ''
+
+interface KeyTile {
+  label: string
+  icon: React.ReactNode
+  value: string
+  typical: string
+  tone: Tone
+  /** 0..1 along the bar, further right is better. */
+  pos: number | null
+  mark: number
+  pill: string
+}
+
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x))
+
 export function KeyStats({ s, index }: { s: Summary; index: number }) {
   const b = benchmarkFor(index)
-  const typical = `typical ${hcpLabel(index)}:`
-  // Higher is better for everything here except putts.
-  const tone = (mine: number | null, theirs: number, lowerIsBetter = false) =>
+  const typical = `typical ${hcpLabel(index)}`
+  // Higher is better for everything here except putts and score to par.
+  const tone = (mine: number | null, theirs: number, lowerIsBetter = false): Tone =>
     mine == null ? '' : Math.abs(mine - theirs) < (lowerIsBetter ? 0.5 : 0.03) ? '' : (lowerIsBetter ? mine < theirs : mine > theirs) ? 'good' : 'bad'
-  const tiles: [string, string, string, string][] = [
-    ['Fairways', pct(s.fairways), `${typical} ${pct(b.fairways)}`, tone(s.fairways, b.fairways)],
-    ['Greens in reg', pct(s.gir), `${typical} ${pct(b.gir)}`, tone(s.gir, b.gir)],
-    ['Scrambling', pct(s.scrambling), `${typical} ${pct(b.scrambling)}`, tone(s.scrambling, b.scrambling)],
-    ['Putts', num(s.puttsPerRound), `${typical} ${num(b.putts)}`, tone(s.puttsPerRound, b.putts, true)],
+  const arrow = (t: Tone) => (t === 'good' ? '▲ ' : t === 'bad' ? '▼ ' : '')
+  const likePill = (stat: 'gir' | 'scrambling' | 'putts', mine: number | null, t: Tone) =>
+    mine == null ? '' : t ? `${arrow(t)}Like ${playsLikeLabel(playsLike(stat, mine))}` : 'On your level'
+  const pctTile = (label: string, icon: React.ReactNode, mine: number | null, theirs: number, stat?: 'gir' | 'scrambling'): KeyTile => {
+    const t = tone(mine, theirs)
+    const diff = mine == null ? 0 : Math.round(Math.abs(mine - theirs) * 100)
+    return {
+      label,
+      icon,
+      value: pct(mine),
+      typical: `${typical} ${pct(theirs)}`,
+      tone: t,
+      pos: mine,
+      mark: theirs,
+      pill: stat ? likePill(stat, mine, t) : mine == null ? '' : t ? `${arrow(t)}${diff}% ${t === 'good' ? 'over' : 'under'}` : 'On your level',
+    }
+  }
+  // Putts run the other way, so the bar shows 40 putts at the left and 26 at the right.
+  const puttPos = (x: number) => clamp01((40 - x) / 14)
+  const puttTone = tone(s.puttsPerRound, b.putts, true)
+  const tiles: KeyTile[] = [
+    pctTile('Fairways', <TeeIcon />, s.fairways, b.fairways),
+    pctTile('Greens in reg', <FlagIcon />, s.gir, b.gir, 'gir'),
+    pctTile('Scrambling', <ChipIcon />, s.scrambling, b.scrambling, 'scrambling'),
+    {
+      label: 'Putts',
+      icon: <PuttIcon />,
+      value: num(s.puttsPerRound),
+      typical: `${typical} ${num(b.putts)}`,
+      tone: puttTone,
+      pos: s.puttsPerRound == null ? null : puttPos(s.puttsPerRound),
+      mark: puttPos(b.putts),
+      pill: likePill('putts', s.puttsPerRound, puttTone),
+    },
   ]
   const signed = (x: number) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(1)}`
+  const heroTone = tone(s.toParAvg, b.toPar, true)
   return (
-    <div className="keystats">
-      <div className="t3 hero">
+    <div className="ks">
+      <div className={`tile hero ${heroTone}`}>
         <div className="hero-text">
-          <span className="l">Scoring average</span>
-          <span className="s">{s.fullRounds ? `Over ${s.fullRounds} full round${s.fullRounds > 1 ? 's' : ''}` : 'No full rounds yet'}</span>
+          <div className="tile-head">
+            <span className="ic"><CardIcon /></span>
+            <span className="l">
+              Scoring average{s.fullRounds ? ` · ${s.fullRounds} round${s.fullRounds > 1 ? 's' : ''}` : ''}
+            </span>
+          </div>
+          <span className="s">
+            {s.toParAvg != null ? `${signed(s.toParAvg)} to par · ${typical} ${signed(b.toPar)}` : 'No full rounds yet'}
+          </span>
           {s.toParAvg != null && (
-            <span className="s">
-              <span className={tone(s.toParAvg, b.toPar, true)}>{signed(s.toParAvg)} to par</span> · {typical} {signed(b.toPar)}
+            <span className="ribbon">
+              {heroTone === 'good' ? '★ ' : ''}Scoring like {playsLikeLabel(playsLike('toPar', s.toParAvg))}
             </span>
           )}
         </div>
         <span className="v">{num(s.scoringAvg)}</span>
       </div>
-      {tiles.map(([l, v, sub, t]) => (
-        <div className="t3" key={l}>
-          <span className="l">{l}</span>
-          <span className={`v ${t}`}>{v}</span>
-          <span className="s">{sub}</span>
+      {tiles.map((t) => (
+        <div className={`tile ${t.tone}`} key={t.label}>
+          <div className="tile-head">
+            <span className="ic">{t.icon}</span>
+            <span className="l">{t.label}</span>
+          </div>
+          <span className="v">{t.value}</span>
+          <div className="bar">
+            {t.pos != null && <i style={{ width: `${clamp01(t.pos) * 100}%` }} />}
+            <b style={{ left: `${clamp01(t.mark) * 100}%` }} />
+          </div>
+          <div className="cap">
+            <span>{t.pos != null ? 'You' : 'No data yet'}</span>
+            <span>{t.typical}</span>
+          </div>
+          {t.pill && <span className="pill">{t.pill}</span>}
         </div>
       ))}
-      <span className="muted small benchnote">Typical figures: {BENCHMARK_SOURCE}, blended for your handicap.</span>
+      <span className="muted small benchnote">
+        Green means you're beating a typical {hcpLabel(index)}, amber means there's room to grow. Typical figures: {BENCHMARK_SOURCE}.
+      </span>
     </div>
   )
 }
