@@ -161,17 +161,48 @@ export function useRound(code: string) {
         if (alive) setStatus(cached ? 'offline' : 'missing')
       }
     })()
-    const unsub = backend.subscribe(code, apply)
+    let unsub = backend.subscribe(code, apply)
     const unsubLocal = backend.kind === 'local' ? () => {} : localBackend.subscribe(code, apply)
-    const tick = setInterval(async () => setPending(await flushQueue()), 5000)
-    const online = async () => setPending(await flushQueue())
+    // Safety net for when a phone sleeps or loses signal and misses live updates:
+    // re-read the round from the server and reconnect the live feed.
+    const refresh = async () => {
+      if (backend.kind === 'local') return
+      try {
+        const remote = await backend.load(code)
+        if (!alive || !remote) return
+        const mine = Object.fromEntries(readQueue().filter((w) => w.code === code).map((w) => [w.k, w.v]))
+        ref.current = { ...ref.current, ...remote, ...mine }
+        setEntries(ref.current)
+        setStatus('ready')
+      } catch {
+        /* offline; try again next time */
+      }
+    }
+    let ticks = 0
+    const tick = setInterval(async () => {
+      setPending(await flushQueue())
+      if (++ticks % 4 === 0) refresh()
+    }, 5000)
+    const wake = async () => {
+      if (document.visibilityState !== 'visible') return
+      setPending(await flushQueue())
+      unsub()
+      unsub = backend.subscribe(code, apply)
+      refresh()
+    }
+    const online = async () => {
+      setPending(await flushQueue())
+      refresh()
+    }
     window.addEventListener('online', online)
+    document.addEventListener('visibilitychange', wake)
     return () => {
       alive = false
       unsub()
       unsubLocal()
       clearInterval(tick)
       window.removeEventListener('online', online)
+      document.removeEventListener('visibilitychange', wake)
     }
   }, [code])
 
