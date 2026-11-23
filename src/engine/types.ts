@@ -117,4 +117,6 @@ export interface Round {
   wolf: Record<string, (WolfChoice | null)[]>
   createdBy: string
   updatedAt: number
+  /** Head-to-head games still waiting for the organiser to pick the two players. */
+  pairsToPick?: { type: 'match' | 'nassau'; pair?: [string, string] }[]
 }

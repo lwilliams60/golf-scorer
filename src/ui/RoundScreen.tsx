@@ -68,7 +68,7 @@ export function RoundScreen({ code, profile }: { code: string; profile: Profile 
           </button>
           <button className="groups-btn" onClick={() => openTab('groups')}>
             {round.players.length} players · {round.groups.length} {round.groups.length === 1 ? 'group' : 'groups'}
-            {me === round.createdBy ? ' · Edit' : ''} ›
+            {me === round.createdBy ? (round.pairsToPick?.some((m) => !m.pair?.[0] || !m.pair?.[1]) ? ' · Pick match players' : ' · Edit') : ''} ›
           </button>
         </div>
         <span className={`sync ${pending ? 'waiting' : ''}`} title={backend.kind === 'local' ? 'Test mode' : pending ? 'Waiting for signal' : 'Synced'}>

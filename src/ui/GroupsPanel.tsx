@@ -80,6 +80,41 @@ export function GroupsPanel({
           </ul>
         </section>
       ))}
+      {(round.pairsToPick ?? []).map((m) => (
+        <section key={m.type} className="grp">
+          <h3>{m.type === 'match' ? 'Match play' : 'Nassau'}</h3>
+          {!m.pair && <p className="muted small">{organiser ? 'Pick the two players to start this game.' : 'The organiser will pick the two players.'}</p>}
+          {organiser ? (
+            <div className="pair-pick">
+              {[0, 1].map((side) => (
+                <select
+                  key={side}
+                  aria-label={`${m.type} player ${side + 1}`}
+                  value={m.pair?.[side] ?? ''}
+                  onChange={(e) => {
+                    const next: [string, string] = [...(m.pair ?? ['', ''])] as [string, string]
+                    next[side] = e.target.value
+                    set(key.pair(m.type), next)
+                  }}
+                >
+                  <option value="">Pick</option>
+                  {round.players.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              ))}
+            </div>
+          ) : (
+            m.pair && (
+              <p>
+                {round.players.find((p) => p.id === m.pair![0])?.name} v {round.players.find((p) => p.id === m.pair![1])?.name}
+              </p>
+            )
+          )}
+        </section>
+      ))}
     </main>
   )
 }
