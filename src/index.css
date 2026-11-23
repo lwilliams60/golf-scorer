@@ -39,7 +39,8 @@ h3 { font-size: 0.95rem; margin: 0 0 6px; }
 .sticky { position: sticky; top: 0; z-index: 5; background: var(--bg); }
 .top {
   display: flex; align-items: center; gap: 12px; min-height: 64px;
-  padding: calc(var(--top-pad) + 10px) 16px 12px; background: var(--bg); color: var(--ink);
+  /* iPhone home-screen apps blur the strip just below the clock, so keep text clear of it. */
+  padding: calc(var(--top-pad) + 36px) 16px 14px; background: var(--bg); color: var(--ink);
 }
 .screen > .top { position: sticky; top: 0; z-index: 5; }
 .top .muted { color: var(--muted); }
