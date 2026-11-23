@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { go } from '../nav'
-import { allCourses, saveCourse } from '../data/courses'
+import { addToLibrary, allCourses, loadLibrary } from '../data/courses'
+import { CoursePicker, CourseReview } from './CoursePicker'
 import { DEFAULT_ALLOWANCE, GAME_LABELS } from '../engine/games'
 import { TeeSelect } from './TeeSelect'
 import type { Course, GameConfig, GameType, Gender } from '../engine/types'
@@ -54,8 +55,18 @@ function chunkGroups(n: number): number[] {
 export function CreateRound({ profile }: { profile: Profile }) {
   const [courses, setCourses] = useState<Course[]>(allCourses)
   const [courseId, setCourseId] = useState(courses[0]?.id ?? '')
-  const [editing, setEditing] = useState(false)
+  // null = closed, 'new' = blank card, a Course = editing that card
+  const [editing, setEditing] = useState<Course | 'new' | null>(null)
+  const [reviewing, setReviewing] = useState<Course | null>(null)
   const course = courses.find((c) => c.id === courseId)
+  useEffect(() => {
+    loadLibrary().then(setCourses)
+  }, [])
+  function chooseCourse(c: Course) {
+    setCourses((cs) => [c, ...cs.filter((x) => x.id !== c.id)])
+    setCourseId(c.id)
+    setPlayers((ps) => ps.map((p) => ({ ...p, tee: c.tees[0].name })))
+  }
   const today = new Date().toISOString().slice(0, 10)
   const [name, setName] = useState('')
   const [date, setDate] = useState(today)
@@ -139,15 +150,27 @@ export function CreateRound({ profile }: { profile: Profile }) {
   if (editing)
     return (
       <CourseEditor
-        onCancel={() => setEditing(false)}
+        onCancel={() => setEditing(null)}
         onSave={(c) => {
-          saveCourse(c)
-          setCourses(allCourses())
-          setCourseId(c.id)
-          setPlayers((ps) => ps.map((p) => ({ ...p, tee: c.tees[0].name })))
-          setEditing(false)
+          addToLibrary(c)
+          chooseCourse(c)
+          setEditing(null)
+          setReviewing(null)
         }}
-        course={course && course.id.startsWith('custom') ? course : undefined}
+        course={editing === 'new' ? undefined : editing}
+      />
+    )
+  if (reviewing)
+    return (
+      <CourseReview
+        course={reviewing}
+        onCancel={() => setReviewing(null)}
+        onFix={() => setEditing(reviewing)}
+        onUse={() => {
+          addToLibrary(reviewing)
+          chooseCourse(reviewing)
+          setReviewing(null)
+        }}
       />
     )
 
@@ -161,23 +184,7 @@ export function CreateRound({ profile }: { profile: Profile }) {
       </header>
       <main className="pad">
         <h2>Course</h2>
-        <select
-          value={courseId}
-          onChange={(e) => {
-            setCourseId(e.target.value)
-            const c = courses.find((x) => x.id === e.target.value)
-            if (c) setPlayers((ps) => ps.map((p) => ({ ...p, tee: c.tees[0].name })))
-          }}
-        >
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <button className="link" onClick={() => setEditing(true)}>
-          + Add a course by hand
-        </button>
+        <CoursePicker courses={courses} selected={course} onPick={chooseCourse} onCheck={setReviewing} onAddByHand={() => setEditing('new')} />
         <div className="row2">
           <label className="field">
             Round name

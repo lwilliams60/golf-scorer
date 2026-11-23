@@ -19,20 +19,30 @@ export function CourseEditor({ course, onSave, onCancel }: { course?: Course; on
   const totalPar = par.reduce((s, p) => s + (Number(p) || 0), 0)
   const siSorted = [...si.map(Number)].sort((a, b) => a - b)
   const siOk = siSorted.every((v, i) => v === i + 1)
-  const teesOk = tees.length > 0 && tees.every((t) => t.name.trim() && Number(t.cr) > 50 && Number(t.slope) >= 55 && Number(t.slope) <= 155)
+  const rated = (t: TeeRow) => Number(t.cr) > 50 && Number(t.slope) >= 55 && Number(t.slope) <= 155
+  // A women's-only tee from an imported card can leave the men's rating blank.
+  const teesOk = tees.length > 0 && tees.every((t, i) => t.name.trim() && (rated(t) || (!t.cr && !t.slope && !!start.tees[i]?.ratings.women)))
   const valid = name.trim() && par.every((p) => Number(p) >= 3 && Number(p) <= 6) && siOk && teesOk
 
   function save() {
     onSave({
       id: start.id,
       name: name.trim(),
-      holes: par.map((p, i) => ({ n: i + 1, par_m: Number(p), si_m: Number(si[i]), par_w: Number(p), si_w: Number(si[i]) })),
-      tees: tees.map((t) => ({
-        name: t.name.trim(),
-        yards: par.map(() => 0),
-        total: 0,
-        ratings: { men: { par: totalPar, cr: Number(t.cr), slope: Number(t.slope) } },
-      })),
+      holes: par.map((p, i) => {
+        // Keep a separate women's card if the course came with one.
+        const h = start.holes[i]
+        const ownW = h && (h.par_w !== h.par_m || h.si_w !== h.si_m)
+        return { n: i + 1, par_m: Number(p), si_m: Number(si[i]), par_w: ownW ? h.par_w : Number(p), si_w: ownW ? h.si_w : Number(si[i]) }
+      }),
+      tees: tees.map((t, i) => {
+        const old = start.tees[i]
+        return {
+          name: t.name.trim(),
+          yards: old?.yards ?? par.map(() => 0),
+          total: old?.total ?? 0,
+          ratings: { ...(rated(t) ? { men: { par: totalPar, cr: Number(t.cr), slope: Number(t.slope) } } : {}), ...(old?.ratings.women ? { women: old.ratings.women } : {}) },
+        }
+      }),
     })
   }
 
@@ -54,7 +64,7 @@ export function CourseEditor({ course, onSave, onCancel }: { course?: Course; on
         <button className="link" onClick={onCancel}>
           ‹ Cancel
         </button>
-        <h1>Add a course</h1>
+        <h1>{course ? 'Check the card' : 'Add a course'}</h1>
       </header>
       <main className="pad">
         <p className="muted small">Copy these from the club's scorecard. It's saved on this phone and shared with everyone in the round.</p>
