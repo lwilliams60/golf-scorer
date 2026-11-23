@@ -56,7 +56,7 @@ export function hcpLabel(index: number) {
   return `${r < 0 ? `+${Math.abs(r)}` : r} hcp`
 }
 
-type PlaysLikeStat = 'toPar' | 'gir' | 'scrambling' | 'putts'
+type PlaysLikeStat = 'toPar' | 'gir' | 'scrambling' | 'sandSaves' | 'putts'
 
 /**
  * The handicap whose typical figure matches this value, read backwards from the table: "your greens are like a 3 hcp".
