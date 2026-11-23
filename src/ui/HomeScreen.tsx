@@ -22,7 +22,7 @@ export function HomeScreen({ profile }: { profile: Profile }) {
 
   const last = useMemo(() => (mine ?? []).slice(0, SNAPSHOT), [mine])
   const summary = useMemo(() => summarise(last.map((m) => m.facts)), [last])
-  const focus = useMemo(() => focusAreas(summary), [summary])
+  const focus = useMemo(() => focusAreas(summary, profile.handicapIndex), [summary, profile.handicapIndex])
   const initials = profile.name
     .split(/\s+/)
     .map((w) => w[0])
@@ -75,12 +75,12 @@ export function HomeScreen({ profile }: { profile: Profile }) {
                   Last {last.length} round{last.length > 1 ? 's' : ''}
                 </span>
               </div>
-              <KeyStats s={summary} />
+              <KeyStats s={summary} index={profile.handicapIndex} />
               <button className="secondary block" style={{ marginTop: 0 }} onClick={() => go('stats')}>
                 View more stats ›
               </button>
             </section>
-            <FocusList focus={focus} />
+            <FocusList focus={focus} index={profile.handicapIndex} />
             <section className="stack" style={{ gap: 10 }}>
               <div className="sechead">
                 <h2>Recent rounds</h2>

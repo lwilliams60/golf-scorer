@@ -223,3 +223,6 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .keystats .hero .s { font-size: 12.5px; }
 .keystats .hero .v { font-size: 40px; line-height: 1; color: var(--accent); }
 .statsec .standings { margin-top: 6px; }
+.keystats .benchnote { grid-column: 1 / -1; font-size: 11.5px; }
+.t3 .v.good { color: var(--accent); }
+.t3 .v.bad { color: var(--bad); }

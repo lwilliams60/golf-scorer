@@ -1,4 +1,5 @@
 import { holePar } from './handicap'
+import { benchmarkFor, hcpLabel } from '../data/benchmarks'
 import type { ApproachBand, ApproachResult, HoleStats, PuttBand, Round, TeeResult } from './types'
 
 /** Expected putts for a scratch-standard putter from the middle of each distance band (from published tour putting averages). */
@@ -122,6 +123,8 @@ export interface Summary {
   rounds: number
   fullRounds: number
   scoringAvg: number | null
+  /** Average score to par over full rounds. */
+  toParAvg: number | null
   fairways: number | null
   missLeft: number | null
   missRight: number | null
@@ -160,6 +163,7 @@ export function summarise(rounds: RoundFacts[]): Summary {
     rounds: rounds.length,
     fullRounds: full.length,
     scoringAvg: avg(full.map((r) => r.gross)),
+    toParAvg: avg(full.map((r) => r.toPar)),
     fairways: pct(tees.filter((h) => h.tee === 'fairway').length, tees.length),
     missLeft: pct(misses.filter((h) => h.tee === 'left').length, misses.length),
     missRight: pct(misses.filter((h) => h.tee === 'right').length, misses.length),
@@ -191,11 +195,30 @@ export interface Focus {
   area: 'tee' | 'approach' | 'around' | 'putting'
   title: string
   body: string
+  /** Lower ranks first: strokes gained, or minus the shots lost against the handicap benchmark. */
   sg: number
+  /** Shots a round lost against a typical golfer of your handicap, when ranked that way. */
+  gap?: number
+}
+
+/**
+ * Rough shots a round each area costs compared with a typical golfer of this handicap (Shot Scope averages).
+ * Tee: each missed fairway ~0.25 shots over ~14 driving holes. Approach: each missed green ~0.6 shots.
+ * Around the green: each failed up and down 1 shot, over the greens you actually miss. Putting: putts a round.
+ */
+export function benchmarkGaps(s: Summary, index: number) {
+  const b = benchmarkFor(index)
+  const missedGreens = 18 * (1 - (s.gir ?? b.gir))
+  return {
+    tee: s.fairways == null ? null : (b.fairways - s.fairways) * 14 * 0.25,
+    approach: s.gir == null ? null : (b.gir - s.gir) * 18 * 0.6,
+    around: s.scrambling == null ? null : (b.scrambling - s.scrambling) * missedGreens,
+    putting: s.puttsPerRound == null ? null : s.puttsPerRound - b.putts,
+  }
 }
 
 /** The three areas costing the most strokes, each with a reason from the player's data and a drill. */
-export function focusAreas(s: Summary): Focus[] {
+export function focusAreas(s: Summary, index?: number): Focus[] {
   const out: Focus[] = []
   const p = (x: number | null) => (x == null ? '' : `${Math.round(x * 100)}%`)
   if (s.sg.tee != null) {
@@ -226,7 +249,10 @@ export function focusAreas(s: Summary): Focus[] {
     out.push({ area: 'approach', sg: s.sg.approach, title: worst ? `Approaches from ${approachBandLabel(worst.band)}` : 'Approach shots', body: body + where })
   }
   if (s.sg.around != null) {
-    const sandWorse = s.sandSaves != null && (s.scrambling == null || s.sandSaves < s.scrambling)
+    const bm = index == null ? null : benchmarkFor(index)
+    const sandWorse =
+      s.sandSaves != null &&
+      (s.scrambling == null || (bm ? bm.sandSaves - s.sandSaves > bm.scrambling - s.scrambling : s.sandSaves < s.scrambling))
     out.push(
       sandWorse
         ? { area: 'around', sg: s.sg.around, title: 'Bunker play', body: `Saving par from ${p(s.sandSaves)} of greenside bunkers. Drill: draw a line in the sand and hit 20 shots taking sand from the line forward.` }
@@ -240,5 +266,27 @@ export function focusAreas(s: Summary): Focus[] {
         : { area: 'putting', sg: s.sg.putting, title: 'Holing out', body: `${s.puttsPerRound?.toFixed(1) ?? '–'} putts a round. Drill: 10 putts in a circle at 4 feet, start again if you miss one.` },
     )
   }
-  return out.sort((a, b) => a.sg - b.sg).slice(0, 3)
+  if (index == null) return out.sort((a, b) => a.sg - b.sg).slice(0, 3)
+
+  // Rank by shots lost against a typical golfer of the same handicap, and only where you're behind.
+  const gaps = benchmarkGaps(s, index)
+  const b = benchmarkFor(index)
+  const p0 = (x: number) => `${Math.round(x * 100)}%`
+  const compare: Record<Focus['area'], string> = {
+    tee: `fairways ${p(s.fairways)} v ${p0(b.fairways)}`,
+    approach: `greens ${p(s.gir)} v ${p0(b.gir)}`,
+    around: `up and downs ${p(s.scrambling)} v ${p0(b.scrambling)}`,
+    putting: `putts ${s.puttsPerRound?.toFixed(1) ?? '–'} v ${b.putts.toFixed(1)}`,
+  }
+  return out
+    .map((f) => ({ f, gap: gaps[f.area] }))
+    .filter((x): x is { f: Focus; gap: number } => x.gap != null && x.gap >= 0.25)
+    .sort((a, b) => b.gap - a.gap)
+    .slice(0, 3)
+    .map(({ f, gap }) => ({
+      ...f,
+      sg: -gap,
+      gap,
+      body: `About ${gap.toFixed(1)} shots a round behind a typical ${hcpLabel(index)} (${compare[f.area]}). ${f.body}`,
+    }))
 }
