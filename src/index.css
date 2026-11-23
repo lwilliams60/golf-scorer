@@ -205,4 +205,4 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .pcard-row label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .pcard-row label span { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 .pcard input, .pcard select { background: var(--bg); }
-.pcard select { padding-left: 10px; padding-right: 6px; }
+.pcard select { padding-left: 10px; padding-right: 4px; font-size: 15px; }

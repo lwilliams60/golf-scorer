@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { go } from '../nav'
 import { allCourses, saveCourse } from '../data/courses'
 import { DEFAULT_ALLOWANCE, GAME_LABELS } from '../engine/games'
-import { teeLabel } from '../engine/handicap'
+import { TeeSelect } from './TeeSelect'
 import type { Course, GameConfig, GameType, Gender } from '../engine/types'
 import { setMyPlayerIn, type Profile } from '../store/profile'
 import { key, newCode, newId, writeMany, type Setup, type StoredPlayer } from '../store/round'
@@ -210,13 +210,7 @@ export function CreateRound({ profile }: { profile: Profile }) {
               </label>
               <label>
                 <span>Tees</span>
-                <select value={r.tee} onChange={(e) => upd(r.id, { tee: e.target.value })}>
-                  {course?.tees.map((t) => (
-                    <option key={t.name} value={t.name}>
-                      {teeLabel(t, r.gender)}
-                    </option>
-                  ))}
-                </select>
+                {course && <TeeSelect course={course} tee={r.tee} gender={r.gender} onChange={(tee, gender) => upd(r.id, { tee, gender })} />}
               </label>
               {!autoGroups && (
                 <label>

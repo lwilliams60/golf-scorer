@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { go } from '../nav'
-import { courseHandicap, holePar, holeSI, playingHandicap, strokesOnHole, teeFor, teeLabel } from '../engine/handicap'
+import { courseHandicap, holePar, holeSI, playingHandicap, strokesOnHole, teeFor } from '../engine/handicap'
+import { TeeSelect } from './TeeSelect'
 import { currentWolf } from '../engine/games'
 import { moneyTotals, roundResults, settle } from '../engine/settle'
 import type { ApproachResult, HoleStats, Player, PuttBand, Round, TeeResult, WolfChoice } from '../engine/types'
@@ -210,13 +211,7 @@ function Scorecard({ round, me, set }: { round: Round; me: string; set: (k: stri
       {group.players.includes(me) && hole === 0 && (
         <div className="statrow" style={{ marginTop: 14 }}>
           <span>My tees</span>
-          <select value={meP.tee} onChange={(e) => set(key.player(me), { ...meP, tee: e.target.value })}>
-            {round.course.tees.map((t) => (
-              <option key={t.name} value={t.name}>
-                {teeLabel(t, meP.gender)}
-              </option>
-            ))}
-          </select>
+          <TeeSelect course={round.course} tee={meP.tee} gender={meP.gender} onChange={(tee, gender) => set(key.player(me), { ...meP, tee, gender })} />
         </div>
       )}
       {hole === 0 && <p className="muted small">Course handicap {courseHandicap(round.course, meP)} off {meP.tee}.</p>}
