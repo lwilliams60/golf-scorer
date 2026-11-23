@@ -38,7 +38,7 @@ export function StatsScreen({ profile }: { profile: Profile }) {
             </div>
             <StatSections s={s} rounds={list.map((m) => m.facts)} stableford={full.length ? full.reduce((a, m) => a + m.points, 0) / full.length : null} index={profile.handicapIndex} />
             <SgBars s={s} />
-            <FocusList focus={focusAreas(s)} />
+            <FocusList focus={focusAreas(s, profile.handicapIndex)} index={profile.handicapIndex} />
             <section className="card">
               <div className="sechead">
                 <h2>Rounds</h2>

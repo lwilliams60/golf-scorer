@@ -67,6 +67,13 @@ describe('summary and focus', () => {
     const tee = focusAreas({ ...s, sg: { tee: -5, approach: null, around: null, putting: null } })
     expect(tee[0].title).toMatch(/right/)
   })
+  it('ranks against the handicap benchmark and skips areas where you are ahead', () => {
+    const t = { ...s, fairways: 0.3, gir: 0.5, scrambling: 0.1, puttsPerRound: 30 }
+    const f = focusAreas(t, 10)
+    // around: (0.31-0.1)*9 = 1.9, tee: (0.49-0.3)*14*0.25 = 0.67; approach and putting are ahead of a 10
+    expect(f.map((x) => x.area)).toEqual(['around', 'tee'])
+    expect(f[0].body).toMatch(/^About 1\.9 shots a round behind a typical 10 hcp \(up and downs 10% v 31%\)/)
+  })
   it('breaks approaches down by distance and names the weakest one', () => {
     const app = [
       ...[0, 1, 2].map(() => holeFacts(4, 4, { approach: 'green', approachDist: '100-125', putts: 2 })),

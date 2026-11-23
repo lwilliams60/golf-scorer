@@ -100,7 +100,7 @@ export function CoachScreen({ token }: { token: string }) {
       <main className="pad stack">
         <Tiles s={rep.summary} stableford={rep.stableford} />
         <SgBars s={rep.summary} />
-        <FocusList focus={rep.focus} />
+        <FocusList focus={rep.focus} index={rep.handicapIndex} />
         <PuttingTable s={rep.summary} />
         <section className="card">
           <div className="sechead">

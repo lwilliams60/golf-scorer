@@ -69,14 +69,15 @@ export function SgBars({ s }: { s: Summary }) {
   )
 }
 
-export function FocusList({ focus }: { focus: Focus[] }) {
-  if (!focus.length) return null
+export function FocusList({ focus, index }: { focus: Focus[]; index?: number }) {
+  if (!focus.length && index == null) return null
   return (
     <section className="card">
       <div className="sechead">
         <h2>What to work on</h2>
       </div>
-      <span className="muted small">Biggest strokes to gain first</span>
+      <span className="muted small">{index == null ? 'Biggest strokes to gain first' : `Where you lose most shots against a typical ${hcpLabel(index)}`}</span>
+      {!focus.length && <p className="muted" style={{ marginBottom: 0 }}>You're level with or ahead of a typical {hcpLabel(index!)} in every area. Keep it up.</p>}
       {focus.map((f, i) => (
         <div className="focus" key={f.area}>
           <span className="n">{i + 1}</span>

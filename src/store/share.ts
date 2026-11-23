@@ -46,7 +46,7 @@ export function buildReport(profile: Profile, mine: MyRound[]): CoachReport {
     createdAt: new Date().toISOString(),
     summary,
     stableford: full.length ? full.reduce((s, m) => s + m.points, 0) / full.length : null,
-    focus: focusAreas(summary),
+    focus: focusAreas(summary, profile.handicapIndex),
     rounds: last.map((m) => ({
       date: m.round.date,
       course: m.round.course.name,
