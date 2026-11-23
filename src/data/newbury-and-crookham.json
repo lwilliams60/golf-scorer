@@ -1,0 +1,33 @@
+{
+  "name": "Newbury & Crookham Golf Club",
+  "location": "Greenham, Newbury, Berkshire",
+  "source": "Club scorecard, newburygolf.co.uk/course-guide (screenshot from Luke, 23 Nov 2026)",
+  "holes": [
+    {"n":1,"par_m":4,"si_m":10,"par_w":4,"si_w":4},
+    {"n":2,"par_m":4,"si_m":14,"par_w":4,"si_w":16},
+    {"n":3,"par_m":3,"si_m":16,"par_w":3,"si_w":18},
+    {"n":4,"par_m":4,"si_m":6,"par_w":4,"si_w":10},
+    {"n":5,"par_m":4,"si_m":8,"par_w":4,"si_w":2},
+    {"n":6,"par_m":3,"si_m":18,"par_w":3,"si_w":14},
+    {"n":7,"par_m":4,"si_m":4,"par_w":5,"si_w":12},
+    {"n":8,"par_m":4,"si_m":2,"par_w":5,"si_w":6},
+    {"n":9,"par_m":3,"si_m":12,"par_w":3,"si_w":8},
+    {"n":10,"par_m":4,"si_m":11,"par_w":4,"si_w":15},
+    {"n":11,"par_m":4,"si_m":5,"par_w":4,"si_w":7},
+    {"n":12,"par_m":4,"si_m":17,"par_w":4,"si_w":13},
+    {"n":13,"par_m":5,"si_m":7,"par_w":5,"si_w":5},
+    {"n":14,"par_m":4,"si_m":1,"par_w":4,"si_w":1},
+    {"n":15,"par_m":3,"si_m":13,"par_w":3,"si_w":9},
+    {"n":16,"par_m":4,"si_m":3,"par_w":4,"si_w":3},
+    {"n":17,"par_m":3,"si_m":15,"par_w":3,"si_w":17},
+    {"n":18,"par_m":5,"si_m":9,"par_w":5,"si_w":11}
+  ],
+  "tees": [
+    {"name":"Black","yards":[400,290,160,395,352,125,462,426,179,336,356,292,493,406,183,376,165,506],"total":5902,
+     "ratings":{"men":{"par":69,"cr":69.3,"slope":130},"women":{"par":71,"cr":75.1,"slope":143}}},
+    {"name":"Purple","yards":[387,276,141,370,348,119,438,420,170,327,341,280,485,398,179,371,159,501],"total":5710,
+     "ratings":{"men":{"par":69,"cr":68.3,"slope":122},"women":{"par":71,"cr":74.1,"slope":139}}},
+    {"name":"Silver","yards":[352,237,127,310,347,114,430,412,155,281,335,269,457,371,176,331,125,424],"total":5253,
+     "ratings":{"men":{"par":69,"cr":66.1,"slope":113},"women":{"par":71,"cr":71.2,"slope":127}}}
+  ]
+}
