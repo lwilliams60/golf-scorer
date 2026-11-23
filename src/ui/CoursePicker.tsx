@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchUkClub, searchUk, type UkClub } from '../data/courses'
 import { teeLabel } from '../engine/handicap'
 import type { Course } from '../engine/types'
@@ -24,20 +24,44 @@ export function CoursePicker({
   const [choices, setChoices] = useState<Course[] | null>(null)
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
+  const [searching, setSearching] = useState(false)
+  const cache = useRef(new Map<string, UkClub[]>())
   const term = q.trim().toLowerCase()
-  const matches = courses.filter((c) => !term || `${c.name} ${c.location ?? ''}`.toLowerCase().includes(term)).slice(0, 8)
+  // Nothing is listed until you start typing; saved courses match instantly.
+  const matches = term ? courses.filter((c) => `${c.name} ${c.location ?? ''}`.toLowerCase().includes(term)).slice(0, 6) : []
+  const saved = new Set(courses.map((c) => norm(c.name)))
+  const ukClubs = (clubs ?? []).filter((c) => !saved.has(norm(c.name)))
 
-  async function searchAll() {
-    setBusy('search')
-    setErr('')
-    setChoices(null)
-    try {
-      setClubs(await searchUk(q.trim()))
-    } catch (e) {
-      setErr((e as Error).message)
+  // Search every UK club as you type, once you pause for a moment (each search uses one request of the plan).
+  useEffect(() => {
+    if (term.length < 3) {
+      setClubs(null)
+      setSearching(false)
+      return
     }
-    setBusy('')
-  }
+    const hit = cache.current.get(term)
+    if (hit) {
+      setClubs(hit)
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    let live = true
+    const t = setTimeout(async () => {
+      try {
+        const found = await searchUk(term)
+        cache.current.set(term, found)
+        if (live) setClubs(found)
+      } catch (e) {
+        if (live) setErr((e as Error).message)
+      }
+      if (live) setSearching(false)
+    }, 600)
+    return () => {
+      live = false
+      clearTimeout(t)
+    }
+  }, [term])
 
   async function pickClub(c: UkClub) {
     setBusy(c.id)
@@ -71,11 +95,12 @@ export function CoursePicker({
       <input
         type="search"
         value={q}
-        placeholder="Choose or search a course"
+        placeholder="Search for a course"
+        autoComplete="off"
+        autoCorrect="off"
         aria-label="Search courses"
         onChange={(e) => {
           setQ(e.target.value)
-          setClubs(null)
           setChoices(null)
           setErr('')
         }}
@@ -97,16 +122,13 @@ export function CoursePicker({
           </span>
         </button>
       ))}
-      {term && matches.length === 0 && <p className="muted small">Not in the app yet.</p>}
-      {term.length >= 3 && !clubs && (
-        <button className="secondary" disabled={busy === 'search'} onClick={searchAll}>
-          {busy === 'search' ? 'Searching…' : `Search all UK courses for "${q.trim()}"`}
-        </button>
+      {term && term.length < 3 && matches.length === 0 && <p className="muted small">Keep typing to search all UK courses…</p>}
+      {searching && <p className="muted small">Searching UK courses…</p>}
+      {!searching && clubs && matches.length === 0 && ukClubs.length === 0 && (
+        <p className="muted small">No UK clubs found for "{q.trim()}". Try part of the name, like "Croham" or "Hurst".</p>
       )}
-      {clubs && clubs.length === 0 && <p className="muted small">No UK clubs found with that name.</p>}
-      {clubs &&
-        !choices &&
-        clubs.map((c) => (
+      {!choices &&
+        ukClubs.map((c) => (
           <button key={c.id} className="rrow" disabled={!!busy} onClick={() => pickClub(c)}>
             <span>
               <strong>{c.name}</strong>
@@ -212,4 +234,13 @@ export function CourseReview({ course, onUse, onFix, onCancel }: { course: Cours
       </main>
     </div>
   )
+}
+
+/** Club names compared without case, punctuation or "golf club" wording. */
+function norm(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/\b(golf|club|country|g\.?c\.?)\b/g, '')
+    .replace(/[^a-z0-9]/g, '')
 }
