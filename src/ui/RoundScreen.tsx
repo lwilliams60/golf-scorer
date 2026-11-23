@@ -4,8 +4,8 @@ import { courseHandicap, holePar, holeSI, playingHandicap, strokesOnHole, teeFor
 import { TeeSelect } from './TeeSelect'
 import { currentWolf } from '../engine/games'
 import { moneyTotals, roundResults, settle } from '../engine/settle'
-import type { ApproachResult, HoleStats, Player, PuttBand, Round, TeeResult, WolfChoice } from '../engine/types'
-import { holeFacts, PUTT_BANDS } from '../engine/stats'
+import type { ApproachBand, ApproachResult, HoleStats, Player, PuttBand, Round, TeeResult, WolfChoice } from '../engine/types'
+import { APPROACH_BANDS, approachBandLabel, holeFacts, PUTT_BANDS } from '../engine/stats'
 import { backend } from '../store/backend'
 import { key, useRound } from '../store/round'
 import { myPlayerIn, type Profile } from '../store/profile'
@@ -295,8 +295,9 @@ function QuickStats({ par, gross, stats, onChange }: { par: number; gross: numbe
   const tee = stats.tee ?? (stats.fairway === 'hit' ? 'fairway' : stats.fairway === 'left' || stats.fairway === 'right' ? stats.fairway : undefined)
   const f = holeFacts(par, gross, stats)
   const notes: string[] = []
-  if (f.gir === true) notes.push('Green in regulation')
-  if (f.gir === false) notes.push('Missed green')
+  const from = f.approachDist ? ` from ${approachBandLabel(f.approachDist)}` : ''
+  if (f.gir === true) notes.push(`Green in regulation${from}`)
+  if (f.gir === false) notes.push(`Missed green${from}`)
   if (f.sandChance && f.score != null) notes.push(f.sandSaved ? 'sand save' : 'bunker save missed')
   else if (f.scrambleChance) notes.push(f.scrambled ? 'up and down' : 'up and down missed')
   if (f.putts != null) notes.push(`${f.putts} putt${f.putts === 1 ? '' : 's'}${f.firstPutt ? ` from ${PUTT_BANDS.find((b) => b.id === f.firstPutt)!.label}` : ''}`)
@@ -321,6 +322,13 @@ function QuickStats({ par, gross, stats, onChange }: { par: number; gross: numbe
           <Chips items={TEE_CHIPS} value={tee} onPick={(v) => onChange({ tee: v, fairway: undefined })} />
         </div>
       )}
+      <div className="chipgroup">
+        <div className="sechead">
+          <strong>Approach distance</strong>
+          <span>yards to the pin</span>
+        </div>
+        <Chips items={APPROACH_BANDS.map((b) => [b.id, b.label] as [ApproachBand, string])} value={stats.approachDist} onPick={(v) => onChange({ approachDist: v })} />
+      </div>
       <div className="chipgroup">
         <div className="sechead">
           <strong>Approach</strong>

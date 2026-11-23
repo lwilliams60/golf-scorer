@@ -1,5 +1,5 @@
 import type { Focus, RoundFacts, Summary } from '../engine/stats'
-import { PUTT_BANDS } from '../engine/stats'
+import { APPROACH_BANDS, PUTT_BANDS } from '../engine/stats'
 
 const pct = (x: number | null) => (x == null ? '–' : `${Math.round(x * 100)}%`)
 const num = (x: number | null, d = 1) => (x == null ? '–' : x.toFixed(d))
@@ -231,6 +231,17 @@ export function StatSections({ s, rounds, stableford }: { s: Summary; rounds: Ro
           ['Missed left', missPct(m.left), 'of missed greens'],
           ['Missed right', missPct(m.right), 'of missed greens'],
           ['In a bunker', missPct(m.bunker), 'of missed greens'],
+          ...(s.approachByBand ?? [])
+            .filter((b) => b.shots)
+            .map(
+              (b) =>
+                [
+                  `From ${APPROACH_BANDS.find((x) => x.id === b.band)!.label.replace('Under', 'under')} yds`,
+                  `${Math.round((b.greens / b.shots) * 100)}% greens`,
+                  `${b.shots} shot${b.shots > 1 ? 's' : ''}${b.topMiss && b.greens < b.shots ? ` · misses mostly ${b.topMiss === 'bunker' ? 'in bunkers' : b.topMiss}` : ''}`,
+                  b.greens / b.shots < 0.3 && b.shots >= 3 ? 'bad' : '',
+                ] as Row,
+            ),
         ]}
       />
       <Section

@@ -43,11 +43,14 @@ export type FairwayResult = 'hit' | 'left' | 'right' | 'na'
 export type TeeResult = 'left' | 'fairway' | 'right' | 'bunker' | 'penalty'
 export type ApproachResult = 'green' | 'short' | 'long' | 'left' | 'right' | 'bunker'
 export type PuttBand = 'u3' | '3-10' | '10-20' | '20-40' | '40+'
+/** Yards to the pin for the approach shot into the green. */
+export type ApproachBand = 'u100' | '100-125' | '125-150' | '150-175' | '175-200' | '200+'
 
 export interface HoleStats {
   /** v2 quick entry */
   tee?: TeeResult
   approach?: ApproachResult
+  approachDist?: ApproachBand
   firstPutt?: PuttBand
   putts?: number
   /** v1 fields, still read for older rounds */
