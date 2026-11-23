@@ -4,8 +4,9 @@ import { addToLibrary, allCourses, loadLibrary } from '../data/courses'
 import { CoursePicker, CourseReview } from './CoursePicker'
 import { DEFAULT_ALLOWANCE, GAME_LABELS } from '../engine/games'
 import { TeeSelect } from './TeeSelect'
-import type { Course, GameConfig, GameType, Gender } from '../engine/types'
+import type { Course, GameType, Gender } from '../engine/types'
 import { setMyPlayerIn, type Profile } from '../store/profile'
+import { expandGames, type GameTemplate } from '../engine/groups'
 import { key, newCode, newId, writeMany, type Setup, type StoredPlayer } from '../store/round'
 import { CourseEditor } from './CourseEditor'
 import { GAME_RULES } from '../data/gameRules'
@@ -125,38 +126,26 @@ export function CreateRound({ profile }: { profile: Profile }) {
     setBusy(true)
     const code = newCode()
     const groups = groupIds.map((g) => ({ id: `g${g}`, players: rows.filter((r) => r.group === g).map((r) => r.id) }))
-    const all = rows.map((r) => r.id)
-    const cfg: GameConfig[] = []
-    const base = (t: GameType, o: GameOpt) => ({
-      type: t,
-      allowance: Number(o.allowance) / 100,
-      stake: Number(o.stake) || 0,
-    })
+    const templates: GameTemplate[] = []
     for (const t of FIELD_GAMES) {
       const o = games[t]
       if (!o.on) continue
-      const b = base(t, o)
-      if (t === 'stableford' || t === 'stroke' || t === 'skins') cfg.push({ id: t, players: all, ...b })
-      else if (t === 'snake') cfg.push({ id: t, players: all, ...b, snakeGrowth: Number(o.extra) || 0 })
-      else if (t === 'wolf') groups.filter((g) => g.players.length === 4).forEach((g) => cfg.push({ id: `wolf-${g.id}`, players: g.players, ...b }))
-      else if (t === 'sixPoint') groups.filter((g) => g.players.length === 3).forEach((g) => cfg.push({ id: `six-${g.id}`, players: g.players, ...b, sixPointSplit: '420' }))
-      else if (t === 'scramble') cfg.push({ id: t, players: all, teams: groups.map((g) => g.players), ...b })
-      else if (t === 'betterBall') {
-        if (o.mode === 'match')
-          groups
-            .filter((g) => g.players.length === 4)
-            .forEach((g) => cfg.push({ id: `bb-${g.id}`, players: g.players, teams: [g.players.slice(0, 2), g.players.slice(2)], betterBallMode: 'match', ...b }))
-        else {
-          const teams = groups.flatMap((g) => (g.players.length >= 2 ? [g.players.slice(0, 2), ...(g.players.length >= 4 ? [g.players.slice(2, 4)] : [])] : []))
-          cfg.push({ id: 'bb', players: all, teams, betterBallMode: 'stableford', ...b })
-        }
-      } else if ((t === 'match' || t === 'nassau') && o.a && o.b && o.a !== o.b) cfg.push({ id: t, players: [o.a, o.b], ...b })
+      const tp: GameTemplate = { type: t, allowance: Number(o.allowance) / 100, stake: Number(o.stake) || 0 }
+      if (t === 'snake') tp.snakeGrowth = Number(o.extra) || 0
+      if (t === 'betterBall') tp.betterBallMode = o.mode === 'match' ? 'match' : 'stableford'
+      if (t === 'match' || t === 'nassau') {
+        if (!o.a || !o.b || o.a === o.b) continue
+        tp.pair = [o.a, o.b]
+      }
+      templates.push(tp)
     }
+    const cfg = expandGames(templates, groups)
     const setup: Setup = {
       name: name.trim() || `${course.name.replace(/ Golf Club$/, '')} ${new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
       date,
       course,
       games: cfg,
+      templates,
       groups,
       createdBy: rows[0].id,
     }
@@ -274,6 +263,10 @@ export function CreateRound({ profile }: { profile: Profile }) {
             + Add player
           </button>
         )}
+        <p className="muted small join-hint">
+          Big group? Just add yourself and create the round. Everyone else joins with the code or invite link, adds themselves from their own phone, and
+          is put into groups of four. You can move people between groups after.
+        </p>
         <label className="check">
           <input
             type="checkbox"

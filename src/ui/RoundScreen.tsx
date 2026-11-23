@@ -9,8 +9,9 @@ import { APPROACH_BANDS, approachBandLabel, holeFacts, PUTT_BANDS } from '../eng
 import { backend } from '../store/backend'
 import { key, useRound } from '../store/round'
 import { myPlayerIn, type Profile } from '../store/profile'
+import { GroupsPanel } from './GroupsPanel'
 
-type Tab = 'card' | 'board' | 'settle' | 'summary'
+type Tab = 'card' | 'board' | 'settle' | 'summary' | 'groups'
 
 export function RoundScreen({ code, profile }: { code: string; profile: Profile }) {
   const { round, status, set, pending } = useRound(code)
@@ -65,6 +66,10 @@ export function RoundScreen({ code, profile }: { code: string; profile: Profile 
           <button className="invite-btn" onClick={share} aria-label={`Invite players to join with code ${code}`}>
             {copied ? 'Invite link copied' : <>+ Invite players · <span className="invite-code">{code}</span></>}
           </button>
+          <button className="groups-btn" onClick={() => openTab('groups')}>
+            {round.players.length} players · {round.groups.length} {round.groups.length === 1 ? 'group' : 'groups'}
+            {me === round.createdBy ? ' · Edit' : ''} ›
+          </button>
         </div>
         <span className={`sync ${pending ? 'waiting' : ''}`} title={backend.kind === 'local' ? 'Test mode' : pending ? 'Waiting for signal' : 'Synced'}>
           {backend.kind === 'local' ? 'Test' : pending ? `${pending}↑` : '●'}
@@ -82,6 +87,7 @@ export function RoundScreen({ code, profile }: { code: string; profile: Profile 
       {tab === 'board' && <Board round={round} onSummary={() => openTab('summary')} />}
       {tab === 'summary' && <Summary round={round} onBack={() => openTab('card')} />}
       {tab === 'settle' && <Settle round={round} />}
+      {tab === 'groups' && <GroupsPanel round={round} me={me} set={set} onBack={() => openTab('card')} />}
     </div>
   )
 }
@@ -121,6 +127,12 @@ function Scorecard({
 }) {
   const myGroup = round.groups.find((g) => g.players.includes(me)) ?? round.groups[0]
   const [groupId, setGroupId] = useState(myGroup.id)
+  // If the organiser moves me, follow me to my new group.
+  const [lastMine, setLastMine] = useState(myGroup.id)
+  if (lastMine !== myGroup.id) {
+    setLastMine(myGroup.id)
+    setGroupId(myGroup.id)
+  }
   const group = round.groups.find((g) => g.id === groupId) ?? myGroup
   const [hole, setHoleState] = useState(() => firstOpenHole(round, group.players))
   // Every hole change starts the next hole from the top of the page.

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Course, GameConfig, HoleStats, Player, Round, WolfChoice } from '../engine/types'
 import { backend, localBackend, type Entries } from './backend'
+import { expandGames, placeGroups, type GameTemplate } from '../engine/groups'
 
 export interface Setup {
   name: string
@@ -9,9 +10,17 @@ export interface Setup {
   games: GameConfig[]
   groups: { id: string; players: string[] }[]
   createdBy: string
+  /** How each game was set up. When present, games are laid out again as players join or move. */
+  templates?: GameTemplate[]
 }
 
-export type StoredPlayer = Player & { profileId?: string }
+export type StoredPlayer = Player & {
+  profileId?: string
+  /** Group the organiser moved this player to. */
+  group?: string
+  /** When the player added themselves to the round. */
+  joined?: number
+}
 
 export const key = {
   setup: 'setup',
@@ -44,8 +53,10 @@ export function assemble(code: string, e: Entries): Round | null {
     else if (kind === 'w') arr(wolf, a, null as WolfChoice | null)[i] = v as WolfChoice | null
     else if (kind === 'scorer') scorers[a] = v as string | null
   }
-  const order = setup.groups.flatMap((g) => g.players)
+  const groups = placeGroups(setup.groups, players)
+  const order = groups.flatMap((g) => g.players)
   players.sort((x, y) => order.indexOf(x.id) - order.indexOf(y.id))
+  const games = setup.templates ? expandGames(setup.templates, groups) : setup.games
   return {
     id: code,
     code,
@@ -53,8 +64,8 @@ export function assemble(code: string, e: Entries): Round | null {
     date: setup.date,
     course: setup.course,
     players,
-    groups: setup.groups.map((g) => ({ ...g, scorer: scorers[g.id] ?? null })),
-    games: setup.games,
+    groups: groups.map((g) => ({ ...g, scorer: scorers[g.id] ?? null })),
+    games,
     scores,
     teamScores,
     stats,
