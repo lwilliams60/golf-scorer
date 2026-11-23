@@ -114,6 +114,7 @@ main .link { color: var(--accent); }
 .stepper .val { width: 62px; font-family: var(--display); font-size: 1.5rem; font-weight: 700; background: none; border: 0; }
 .stepper .val.under { color: var(--accent); }
 .stepper .val.over { color: var(--blue); }
+.stepper .val.par { color: var(--ink); }
 .stepper .val.pu, .stepper.ro.pu { font-size: 0.95rem; color: var(--muted); }
 .stepper.ro { width: 62px; height: 48px; justify-content: center; font-size: 1.3rem; font-weight: 700; color: var(--muted); }
 .stepper.mini button { width: 40px; height: 40px; font-size: 1.2rem; }
@@ -320,10 +321,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .gl-axis span:last-child { padding-left: 6px; }
 .finish { display: flex; height: 34px; border-radius: 10px; overflow: hidden; font-size: 12px; font-weight: 700; }
 .finish div { display: grid; place-items: center; min-width: 6px; }
-.birdie { background: var(--gold); color: var(--gold-ink); }
-.par { background: var(--accent); color: var(--accent-ink); }
-.bogey { background: #9CC47A; color: var(--ink); }
-.double { background: var(--down); color: #FFFDF8; }
+.fin-birdie { background: var(--gold); color: var(--gold-ink); }
+.fin-par { background: var(--accent); color: var(--accent-ink); }
+.fin-bogey { background: #9CC47A; color: var(--ink); }
+.fin-double { background: var(--down); color: #FFFDF8; }
 .finish-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin-top: 8px; }
 .finish-key i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 .dbars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
@@ -340,3 +341,15 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0;
 .rings > div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .rings .ring { width: 100%; max-width: 140px; }
 .rings .lpill { margin-top: 4px; }
+
+/* Game rules: info button and panel on the new round screen. */
+.game-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.game-head .check { flex: 1; min-width: 0; }
+.info-btn { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--accent); background: none; color: var(--accent); font: italic 700 15px/1 Georgia, 'Times New Roman', serif; cursor: pointer; display: grid; place-items: center; }
+.info-btn.on { background: var(--accent); color: var(--accent-ink); }
+.rules { background: var(--card-2); border-radius: 12px; padding: 12px 14px; margin: 4px 0 10px; font-size: 13.5px; line-height: 1.5; }
+.rules-sum { font-weight: 600; margin: 0 0 4px; }
+.rules h4 { margin: 10px 0 2px; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.rules p { margin: 0; color: var(--ink-2); }
+.rules ul { margin: 2px 0 0; padding-left: 18px; color: var(--ink-2); }
+.rules li { margin: 2px 0; }

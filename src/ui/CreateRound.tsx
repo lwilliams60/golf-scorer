@@ -8,6 +8,7 @@ import type { Course, GameConfig, GameType, Gender } from '../engine/types'
 import { setMyPlayerIn, type Profile } from '../store/profile'
 import { key, newCode, newId, writeMany, type Setup, type StoredPlayer } from '../store/round'
 import { CourseEditor } from './CourseEditor'
+import { GAME_RULES } from '../data/gameRules'
 
 interface PRow {
   id: string
@@ -27,6 +28,27 @@ interface GameOpt {
   mode?: 'stableford' | 'match'
   a?: string
   b?: string
+}
+
+function RulesPanel({ type }: { type: GameType }) {
+  const r = GAME_RULES[type]
+  return (
+    <div className="rules">
+      <p className="rules-sum">{r.summary}</p>
+      <h4>How it works</h4>
+      <ul>
+        {r.howItWorks.map((x) => (
+          <li key={x}>{x}</li>
+        ))}
+      </ul>
+      <h4>Handicaps</h4>
+      <p>{r.handicaps}</p>
+      <h4>If you can't finish a hole</h4>
+      <p>{r.pickUp}</p>
+      <h4>Money</h4>
+      <p>{r.money}</p>
+    </div>
+  )
 }
 
 const FIELD_GAMES: GameType[] = ['stableford', 'stroke', 'skins', 'betterBall', 'wolf', 'sixPoint', 'snake', 'match', 'nassau', 'scramble']
@@ -76,6 +98,7 @@ export function CreateRound({ profile }: { profile: Profile }) {
     { id: newId(), name: profile.name, index: String(profile.handicapIndex), gender: profile.gender, tee: defaultTee, group: 1, profileId: profile.id },
   ])
   const [autoGroups, setAutoGroups] = useState(true)
+  const [rulesOpen, setRulesOpen] = useState<GameType | null>(null)
   const [games, setGames] = useState<Record<string, GameOpt>>(() =>
     Object.fromEntries(
       FIELD_GAMES.map((t) => [t, { on: t === 'stableford', stake: '', allowance: String(Math.round(DEFAULT_ALLOWANCE[t] * 100)), extra: t === 'snake' ? '0' : undefined, mode: 'stableford' }]),
@@ -271,11 +294,23 @@ export function CreateRound({ profile }: { profile: Profile }) {
           if (hidden) return null
           return (
             <div className={`game ${o.on ? 'on' : ''}`} key={t}>
-              <label className="check">
-                <input type="checkbox" checked={o.on} onChange={(e) => updGame(t, { on: e.target.checked })} />
-                <strong>{GAME_LABELS[t]}</strong>
-              </label>
+              <div className="game-head">
+                <label className="check">
+                  <input type="checkbox" checked={o.on} onChange={(e) => updGame(t, { on: e.target.checked })} />
+                  <strong>{GAME_LABELS[t]}</strong>
+                </label>
+                <button
+                  type="button"
+                  className={`info-btn ${rulesOpen === t ? 'on' : ''}`}
+                  aria-expanded={rulesOpen === t}
+                  aria-label={`How ${GAME_LABELS[t]} works`}
+                  onClick={() => setRulesOpen(rulesOpen === t ? null : t)}
+                >
+                  i
+                </button>
+              </div>
               <p className="muted small">{HELP[t]}</p>
+              {rulesOpen === t && <RulesPanel type={t} />}
               {o.on && (
                 <div className="opts">
                   {t !== 'snake' && (

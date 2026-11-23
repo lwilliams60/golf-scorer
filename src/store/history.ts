@@ -8,6 +8,9 @@ import { roundFacts, type RoundFacts } from '../engine/stats'
 import { GAME_LABELS } from '../engine/games'
 import type { Round } from '../engine/types'
 
+/** How many recent rounds the home snapshot and the stats page use by default. */
+export const SNAPSHOT = 6
+
 export interface MyRound {
   round: Round
   pid: string
